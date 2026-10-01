@@ -3,9 +3,8 @@ import { useEffect, useState } from 'react'
 import { AnimatePresence, motion } from 'framer-motion'
 import { supabase, computeVoteStats } from '~/lib/supabase'
 import type { Round, Competitor, Vote, CompetitorWithVotes, FrameTheme } from '~/lib/supabase'
-import { VoteBar } from '~/components/custom'
+import { PlayerHead, VoteBar } from '~/components/custom'
 import { TrophyBadge } from '~/components/custom'
-import { PlayerSkin3D } from '~/components/PlayerSkin3D'
 
 export const Route = createFileRoute()({
   component: OverlayTop3,
@@ -24,34 +23,7 @@ interface RankedEntry {
   rank: 1 | 2 | 3
 }
 
-// Helper to fetch skin URL from Mojang
-async function fetchSkinUrl(nick: string): Promise<string | null> {
-  try {
-    const uuidRes = await fetch(`https://api.mojang.com/users/profiles/minecraft/${nick}`)
-    if (!uuidRes.ok) return null
-    const { id: uuid } = await uuidRes.json()
-    
-    const profileRes = await fetch(`https://sessionserver.mojang.com/session/minecraft/profile/${uuid}`)
-    if (!profileRes.ok) return null
-    const profile = await profileRes.json()
-    
-    const textures = JSON.parse(atob(profile.properties[0].value))
-    return textures.textures.SKIN.url
-  } catch {
-    return null
-  }
-}
-
 function Top3Widget({ entries, showResults }: { entries: RankedEntry[], showResults: boolean }) {
-  const [skinUrls, setSkinUrls] = useState<Record<string, string>>({})
-
-  useEffect(() => {
-    entries.forEach(async (entry) => {
-      const url = await fetchSkinUrl(entry.competitor.player_nick)
-      if (url) setSkinUrls(prev => ({ ...prev, [entry.competitor.player_nick]: url }))
-    })
-  }, [entries])
-
   return (
     <div
       className="flex flex-col gap-2 p-2"
@@ -93,35 +65,7 @@ function Top3Widget({ entries, showResults }: { entries: RankedEntry[], showResu
               className="flex items-center gap-2"
             >
               <TrophyBadge place={rank} size="sm" />
-              {skinUrl ? (
-                <div style={{ width: 60, height: 60, flexShrink: 0, position: 'relative' }}>
-                  <div style={{ 
-                    width: '100%', 
-                    height: '100%', 
-                    background: '#0a0a0a', 
-                    border: `2px solid ${accent}`,
-                    borderRadius: '4px',
-                    overflow: 'hidden',
-                    boxShadow: `0 0 12px ${accent}66, inset 0 0 8px ${accent}33`
-                  }}>
-                    <PlayerSkin3D skinUrl={skinUrl} size={128} animation="wave" autoRotateSpeed={0.15} />
-                  </div>
-                </div>
-              ) : (
-                <div style={{ 
-                  width: 60, 
-                  height: 60, 
-                  flexShrink: 0, 
-                  background: '#1a1a1a', 
-                  border: `2px solid ${accent}66`,
-                  borderRadius: '4px',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center'
-                }}>
-                  <span style={{ fontSize: '10px', color: '#444' }}>?</span>
-                </div>
-              )}
+              <PlayerHead nick={competitor.player_nick} size={24} />
               <div className="flex-1 min-w-0">
                 <div
                   style={{

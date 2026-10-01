@@ -4,6 +4,7 @@ import { motion, AnimatePresence } from 'framer-motion'
 import { supabase, computeVoteStats } from '~/lib/supabase'
 import type { Round, Competitor, Vote, CompetitorWithVotes, FrameTheme } from '~/lib/supabase'
 import { PlayerHead, TrophyBadge } from '~/components/custom'
+import { PlayerSkin3D } from '~/components/PlayerSkin3D'
 
 export const Route = createFileRoute()({
   component: OverlayCena,
@@ -47,6 +48,25 @@ function PodiumCard({
   const accent = FRAME_ACCENT[competitor.frame_theme as FrameTheme] ?? '#ff7800'
   const heights = { 1: 'h-72', 2: 'h-56', 3: 'h-44' }
   const scales = { 1: 'scale-110', 2: 'scale-100', 3: 'scale-95' }
+  const [skinUrl, setSkinUrl] = useState<string | null>(null)
+
+  useEffect(() => {
+    async function fetchSkin() {
+      try {
+        const uuidRes = await fetch(`https://api.mojang.com/users/profiles/minecraft/${competitor.player_nick}`)
+        if (!uuidRes.ok) return
+        const { id: uuid } = await uuidRes.json()
+        
+        const profileRes = await fetch(`https://sessionserver.mojang.com/session/minecraft/profile/${uuid}`)
+        if (!profileRes.ok) return
+        const profile = await profileRes.json()
+        
+        const textures = JSON.parse(atob(profile.properties[0].value))
+        setSkinUrl(textures.textures.SKIN.url)
+      } catch {}
+    }
+    fetchSkin()
+  }, [competitor.player_nick])
 
   return (
     <motion.div
@@ -80,6 +100,24 @@ function PodiumCard({
           />
         )}
       </div>
+
+      {/* 3D Skin */}
+      {skinUrl && (
+        <div className="mb-2">
+          <div style={{ 
+            width: 80, 
+            height: 80, 
+            margin: '0 auto',
+            background: '#0a0a0a', 
+            border: `2px solid ${accent}`,
+            borderRadius: '4px',
+            overflow: 'hidden',
+            boxShadow: `0 0 16px ${accent}66, inset 0 0 12px ${accent}33`
+          }}>
+            <PlayerSkin3D skinUrl={skinUrl} size={160} animation="wave" autoRotateSpeed={0.1} />
+          </div>
+        </div>
+      )}
 
       {/* Player info */}
       <div
