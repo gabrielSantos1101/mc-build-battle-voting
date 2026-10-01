@@ -62,6 +62,10 @@ export function PlayerSkin3D({
         width={size}
         height={size}
         style={{ width: size, height: size }}
+        options={{ 
+          backgroundColor: 0x000000, 
+          backgroundAlpha: 0 
+        }}
       />
     </div>
   )
