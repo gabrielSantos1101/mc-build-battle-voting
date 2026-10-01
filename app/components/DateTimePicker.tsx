@@ -54,20 +54,6 @@ export function DateTimePicker({ value, onChange, label, minDate }: DateTimePick
         <p className="text-[7px] text-[#aaa] font-['Press_Start_2P'] mb-2">{label}</p>
       )}
 
-      {/* Estilos do calendário */}
-      <style>{`
-        .admin-cal .rdp-month_caption { color: #ff9a3c; font-family: 'Press Start 2P', monospace; font-size: 9px; }
-        .admin-cal .rdp-nav button { background: #1a1825; border: 1px solid #333; color: #aaa; cursor: pointer; padding: 4px 6px; }
-        .admin-cal .rdp-nav button:hover { border-color: #ff7800; color: #ff9a3c; }
-        .admin-cal .rdp-weekday { color: #555; font-family: 'Press Start 2P', monospace; font-size: 7px; }
-        .admin-cal .rdp-day_button { font-family: 'Press Start 2P', monospace; font-size: 7px; color: #ccc; background: transparent; border: 1px solid transparent; border-radius: 2px; cursor: pointer; width: 32px; height: 32px; }
-        .admin-cal .rdp-day_button:hover { background: #2a1705; border-color: #ff780066; color: #ff9a3c; }
-        .admin-cal .rdp-selected .rdp-day_button { background: #ff7800 !important; color: #000 !important; border-color: #ffcc66 !important; }
-        .admin-cal .rdp-today .rdp-day_button { border-color: #ff780088; color: #ff9a3c; }
-        .admin-cal .rdp-outside .rdp-day_button { color: #333; }
-        .admin-cal .rdp-disabled .rdp-day_button { color: #2a2a2a; cursor: not-allowed; }
-      `}</style>
-
       <FieldGroup className="flex-row items-end gap-2">
         {/* Campo de Data */}
         <Field className="flex-1">
@@ -92,14 +78,12 @@ export function DateTimePicker({ value, onChange, label, minDate }: DateTimePick
               </Button>
             </PopoverTrigger>
             <PopoverContent
-              className="w-auto p-0 border-2 border-[#ff780066] bg-[#0e0d13] shadow-[0_8px_32px_rgba(0,0,0,0.95)]"
+              className="w-auto p-0 border-2 border-[#ff7800] bg-[#0e0d13] shadow-[0_8px_32px_rgba(0,0,0,0.95)]"
               align="start"
             >
               <Calendar
-                className="admin-cal"
                 mode="single"
                 selected={value}
-                captionLayout="dropdown"
                 defaultMonth={value}
                 onSelect={handleDaySelect}
                 locale={ptBR}
