@@ -1,9 +1,8 @@
 // shadcn/ui — Calendar (react-day-picker v10)
-import * as React from 'react'
-import { DayPicker } from 'react-day-picker'
 import { ptBR } from 'date-fns/locale'
 import { ChevronLeft, ChevronRight } from 'lucide-react'
-import { cn } from '~/lib/cn'
+import * as React from 'react'
+import { DayPicker } from 'react-day-picker'
 import 'react-day-picker/style.css'
 
 export type CalendarProps = React.ComponentProps<typeof DayPicker>
@@ -15,7 +14,7 @@ export function Calendar({
   ...props
 }: CalendarProps) {
   return (
-    <div className="w-[300px] select-none p-3.5 bg-[#0e0d13] text-[#e0e0e0] font-sans">
+    <div className="w-[300px] select-none p-3.5 bg-obsidian text-[#e0e0e0] font-sans">
       <style>{`
         .admin-calendar {
           --rdp-accent-color: #ff7800;

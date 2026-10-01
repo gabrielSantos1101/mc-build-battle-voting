@@ -1,12 +1,11 @@
 import { createFileRoute } from '@tanstack/react-router'
-import React, { useState, useEffect, useRef } from 'react'
 import { motion } from 'framer-motion'
-import { Plus, Trash2, RefreshCw, Eye, EyeOff, Lock, ExternalLink, Image as ImageIcon, Clock, Pencil, X, LogOut } from 'lucide-react'
-import { supabase, computeVoteStats, getRemainingSeconds, formatTimeMMSS } from '~/lib/supabase'
-import type { Round, Competitor, Vote, FrameTheme } from '~/lib/supabase'
-import { MinecraftHorrorFrame, FRAME_CONFIGS } from '~/components/MinecraftHorrorFrame'
-import { MinecraftButton, PlayerHead, StatusBadge } from '~/components/ui'
+import { Clock, ExternalLink, Eye, EyeOff, Image as ImageIcon, Lock, LogOut, Pencil, Plus, RefreshCw, Trash2, X } from 'lucide-react'
+import React, { useEffect, useRef, useState } from 'react'
 import { DateTimePicker } from '~/components/DateTimePicker'
+import { MinecraftButton, PlayerHead, StatusBadge } from '~/components/ui'
+import type { Competitor, FrameTheme, Round, Vote } from '~/lib/supabase'
+import { computeVoteStats, formatTimeMMSS, getRemainingSeconds, supabase } from '~/lib/supabase'
 
 export const Route = createFileRoute('/admin')({
   component: AdminPage,
@@ -70,7 +69,7 @@ function AdminPage() {
       if (session) {
         setIsAuthenticated(true)
       }
-      
+
       // Listen for auth changes
       const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
         setIsAuthenticated(!!session)
@@ -78,7 +77,7 @@ function AdminPage() {
           setPassword('')
         }
       })
-      
+
       return () => subscription.unsubscribe()
     }
     checkAuth()
@@ -131,6 +130,11 @@ function AdminPage() {
 
   async function selectRound(round: Round) {
     setCurrentRound(round)
+    if (round.starts_at) {
+      setStartsAtDate(new Date(round.starts_at))
+    } else {
+      setStartsAtDate(undefined)
+    }
     await Promise.all([loadCompetitors(round.id), loadVotes(round.id)])
   }
 
@@ -169,7 +173,13 @@ function AdminPage() {
         loadCompetitors(currentRound.id)
       })
       .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'rounds', filter: `id=eq.${currentRound.id}` }, (payload) => {
-        setCurrentRound(payload.new as Round)
+        const updatedRound = payload.new as Round
+        setCurrentRound(updatedRound)
+        if (updatedRound.starts_at) {
+          setStartsAtDate(new Date(updatedRound.starts_at))
+        } else {
+          setStartsAtDate(undefined)
+        }
       })
       .subscribe()
 
@@ -183,9 +193,9 @@ function AdminPage() {
     setAuthError(null)
 
     try {
-      const { error } = await supabase.auth.signInWithPassword({ 
-        email: ADMIN_EMAIL, 
-        password 
+      const { error } = await supabase.auth.signInWithPassword({
+        email: ADMIN_EMAIL,
+        password
       })
       if (error) throw error
       setIsAuthenticated(true)
@@ -204,10 +214,10 @@ function AdminPage() {
       setAuthError('Senha deve ter pelo menos 6 caracteres')
       return
     }
-    
+
     setAuthLoading(true)
     setAuthError(null)
-    
+
     try {
       const { error } = await supabase.auth.updateUser({ password: newPassword })
       if (error) throw error
@@ -297,6 +307,26 @@ function AdminPage() {
     const updated = { ...currentRound, ...updatePayload }
     setCurrentRound(updated)
     setRounds((prev) => prev.map((r) => (r.id === currentRound.id ? updated : r)))
+    if (status === 'draft') {
+      setStartsAtDate(undefined)
+    }
+  }
+
+  // Auto-save starts_at when changed (only in draft/paused)
+  async function handleStartsAtChange(date: Date | undefined) {
+    setStartsAtDate(date)
+    if (!currentRound || !date) return
+    if (currentRound.status === 'active' || currentRound.status === 'finished') return
+
+    const { error } = await supabase
+      .from('rounds')
+      .update({ starts_at: date.toISOString() })
+      .eq('id', currentRound.id)
+
+    if (!error) {
+      setCurrentRound({ ...currentRound, starts_at: date.toISOString() })
+      setRounds((prev) => prev.map((r) => (r.id === currentRound.id ? { ...r, starts_at: date.toISOString() } : r)))
+    }
   }
 
   // Toggle suspense mode
@@ -515,9 +545,9 @@ function AdminPage() {
           className="w-full max-w-sm p-6 bg-[#0e0d13] border-4 border-[#ff7800] shadow-[0_0_30px_rgba(255,120,0,0.3)] text-center"
         >
           <div className="text-4xl mb-3">🔐</div>
-          <h1 className="text-sm text-[#ff7800] mb-2 font-['Press_Start_2P']">ADMIN PANEL</h1>
+          <h1 className="text-sm text-pumpkin mb-2 font-['Press_Start_2P']">ADMIN PANEL</h1>
           <p className="text-[9px] text-[#888] mb-6 font-['Press_Start_2P']">
-            Usuário: <span className="text-[#ff9a3c]">{ADMIN_EMAIL}</span>
+            Usuário: <span className="text-pumpkin-light">{ADMIN_EMAIL}</span>
           </p>
 
           <form onSubmit={handleAuth} className="space-y-4">
@@ -532,7 +562,7 @@ function AdminPage() {
                 placeholder="Senha do admin"
                 autoComplete="current-password"
                 autoFocus
-                className="w-full text-[9px] py-3 px-4 bg-[#1a1825] border-2 border-[#ff780066] text-[#ff9a3c] font-['Press_Start_2P'] focus:outline-none focus:border-[#ff7800]"
+                className="w-full text-[9px] py-3 px-4 bg-obsidian-light border-2 border-[#ff780066] text-pumpkin-light font-['Press_Start_2P'] focus:outline-none focus:border-pumpkin"
               />
             </div>
 
@@ -545,7 +575,7 @@ function AdminPage() {
             </MinecraftButton>
           </form>
         </motion.div>
-      </div>
+      </div >
     )
   }
 
@@ -556,7 +586,7 @@ function AdminPage() {
       {/* Header */}
       <header className="max-w-6xl mx-auto flex flex-wrap items-center justify-between gap-4 pb-4 mb-6 border-b-2 border-[#ff780044]">
         <div>
-          <h1 className="text-base md:text-lg text-[#ff7800] flex items-center gap-2">
+          <h1 className="text-base md:text-lg text-pumpkin flex items-center gap-2">
             🎃 PAINEL DO STREAMER
           </h1>
           <p className="text-[8px] text-[#888] mt-1">Controle de Votação Minecraft Build Battle</p>
@@ -565,10 +595,10 @@ function AdminPage() {
         {/* Quick Links + Logout */}
         <div className="flex flex-wrap gap-2 text-[8px]">
           <a
-            href="/"
+            href="/" text-pumpkin-light
             target="_blank"
             rel="noreferrer"
-            className="flex items-center gap-1 bg-[#1a1825] border border-[#ff780066] px-2.5 py-1.5 text-[#ff9a3c] hover:bg-[#ff780022] transition-colors"
+            className="flex items-center gap-1 bg-obsidian-light border border-[#ff780066] px-2.5 py-1.5 text-pumpkin-light hover:bg-[#ff780022] transition-colors"
           >
             <ExternalLink size={12} /> Votação (/)
           </a>
@@ -576,7 +606,7 @@ function AdminPage() {
             href="/overlay/top3"
             target="_blank"
             rel="noreferrer"
-            className="flex items-center gap-1 bg-[#1a1825] border border-[#00c9a766] px-2.5 py-1.5 text-[#00c9a7] hover:bg-[#00c9a722] transition-colors"
+            className="flex items-center gap-1 bg-obsidian-light border border-[#00c9a766] px-2.5 py-1.5 text-warden-teal hover:bg-[#00c9a722] transition-colors"
           >
             <ExternalLink size={12} /> Overlay Top 3 (OBS)
           </a>
@@ -584,7 +614,7 @@ function AdminPage() {
             href="/overlay/cena"
             target="_blank"
             rel="noreferrer"
-            className="flex items-center gap-1 bg-[#1a1825] border border-[#ffd70066] px-2.5 py-1.5 text-[#ffd700] hover:bg-[#ffd70022] transition-colors"
+            className="flex items-center gap-1 bg-obsidian-light border border-[#ffd70066] px-2.5 py-1.5 text-[#ffd700] hover:bg-[#ffd70022] transition-colors"
           >
             <ExternalLink size={12} /> Cena OBS Pódio
           </a>
@@ -596,7 +626,7 @@ function AdminPage() {
           </button>
           <button
             onClick={() => setShowChangePassword(true)}
-            className="flex items-center gap-1 bg-[#1a2a10] border border-[#00c9a766] px-2.5 py-1.5 text-[#00c9a7] hover:bg-[#1a3a10] transition-colors"
+            className="flex items-center gap-1 bg-[#1a2a10] border border-[#00c9a766] px-2.5 py-1.5 text-warden-teal hover:bg-[#1a3a10] transition-colors"
           >
             <Lock size={12} /> Alterar Senha
           </button>
@@ -605,10 +635,10 @@ function AdminPage() {
 
       <div className="max-w-6xl mx-auto grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Left Column: Rounds & Round Controls */}
-        <div className="space-y-6">
+        <div className="space-y-6">text-pumpkin-light
           {/* Create Round */}
-          <div className="p-4 bg-[#0e0d13] border-2 border-[#ff780066]">
-            <h2 className="text-xs text-[#ff9a3c] mb-3 flex items-center gap-2">
+          <div className="p-4 bg-obsidian border-2 border-[#ff780066]">
+            <h2 className="text-xs text-pumpkin-light mb-3 flex items-center gap-2">
               <Plus size={14} /> NOVA RODADA
             </h2>
             <form onSubmit={handleCreateRound} className="space-y-3">
@@ -617,7 +647,7 @@ function AdminPage() {
                 value={newRoundTitle}
                 onChange={(e) => setNewRoundTitle(e.target.value)}
                 placeholder="Ex: Mansão Assombrada"
-                className="w-full text-[9px] p-2.5 bg-[#1a1825] border border-[#444] text-white focus:outline-none focus:border-[#ff7800]"
+                className="w-full text-[9px] p-2.5 bg-obsidian-light border border-[#444] text-white focus:outline-none focus:border-pumpkin"
               />
               <MinecraftButton variant="pumpkin" type="submit" size="sm" className="w-full">
                 Criar Rodada
@@ -626,18 +656,17 @@ function AdminPage() {
           </div>
 
           {/* Rounds List */}
-          <div className="p-4 bg-[#0e0d13] border-2 border-[#333]">
+          <div className="p-4 bg-obsidian border-2 border-[#333]">
             <h2 className="text-xs text-[#aaa] mb-3">RODADAS</h2>
             <div className="space-y-2 max-h-56 overflow-y-auto pr-1">
               {rounds.map((r) => (
                 <button
                   key={r.id}
-                  onClick={() => selectRound(r)}
-                  className={`w-full text-left p-2.5 border text-[8px] flex items-center justify-between transition-colors ${
-                    currentRound?.id === r.id
-                      ? 'bg-[#2a1705] border-[#ff7800] text-[#ff9a3c]'
-                      : 'bg-[#14121d] border-[#222] text-[#888] hover:bg-[#1a1825]'
-                  }`}
+                  onClick={() => selectRound(r)} text-pumpkin-light
+                  className={`w-full text-left p-2.5 border text-[8px] flex items-center justify-between transition-colors ${currentRound?.id === r.id
+                    ? 'bg-[#2a1705] border-pumpkin text-pumpkin-light'
+                    : 'bg-[#14121d] border-[#222] text-[#888] hover:bg-obsidian-light'
+                    }`}
                 >
                   <span className="truncate pr-2">{r.title}</span>
                   <StatusBadge status={r.status} />
@@ -651,9 +680,9 @@ function AdminPage() {
 
           {/* Current Round Controls */}
           {currentRound && (
-            <div className="p-4 bg-[#0e0d13] border-2 border-[#ff7800]">
+            <div className="p-4 bg-obsidian border-2 border-pumpkin">
               <div className="flex items-center justify-between mb-3">
-                <h2 className="text-xs text-[#ff7800] truncate">{currentRound.title}</h2>
+                <h2 className="text-xs text-pumpkin truncate">{currentRound.title}</h2>
                 <StatusBadge status={currentRound.status} />
               </div>
 
@@ -661,13 +690,13 @@ function AdminPage() {
               <div className="mb-3 p-2.5 bg-[#14121d] border border-[#333]">
                 <DateTimePicker
                   value={startsAtDate}
-                  onChange={setStartsAtDate}
+                  onChange={handleStartsAtChange}
                   label="INÍCIO DA VOTAÇÃO:"
                   minDate={new Date()}
                   disabled={currentRound?.status === 'active' || currentRound?.status === 'finished'}
                 />
                 {currentRound.starts_at && currentRound.status === 'draft' && (
-                  <div className="mt-2 text-[8px] text-[#ff9a3c] flex items-center gap-1.5">
+                  <div className="mt-2 text-[8px] text-pumpkin-light flex items-center gap-1.5">
                     <Clock size={12} className="animate-pulse" />
                     <span>Inicia: {new Date(currentRound.starts_at).toLocaleString('pt-BR')}</span>
                   </div>
@@ -708,11 +737,10 @@ function AdminPage() {
                 {/* Suspense Mode */}
                 <button
                   onClick={toggleLiveResults}
-                  className={`w-full text-[8px] p-2 border flex items-center justify-center gap-2 transition-colors ${
-                    currentRound.show_live_results
-                      ? 'bg-[#1a2e1d] border-[#00c9a7] text-[#00c9a7]'
-                      : 'bg-[#2e1a25] border-[#9d50db] text-[#9d50db]'
-                  }`}
+                  className={`w-full text-[8px] p-2 border flex items-center justify-center gap-2 transition-colors ${currentRound.show_live_results
+                    ? 'bg-[#1a2e1d] border-[#00c9a7] text-warden-teal'
+                    : 'bg-[#2e1a25] border-[#9d50db] text-[#9d50db]'
+                    }`}
                 >
                   {currentRound.show_live_results ? (
                     <>
@@ -739,10 +767,10 @@ function AdminPage() {
 
         {/* Right Column (2 cols): Add Competitor & Competitor List */}
         <div className="lg:col-span-2 space-y-6">
-          {/* Add Competitor Form */}
+          {/* Add Competitor Form */}text-pumpkin-light
           {currentRound ? (
-            <div className="p-4 bg-[#0e0d13] border-2 border-[#ff780066]">
-              <h2 className="text-xs text-[#ff9a3c] mb-4 flex items-center gap-2">
+            <div className="p-4 bg-obsidian border-2 border-[#ff780066]">
+              <h2 className="text-xs text-pumpkin-light mb-4 flex items-center gap-2">
                 ⚔ ADICIONAR CONSTRUÇÃO / COMPETIDOR
               </h2>
 
@@ -757,7 +785,7 @@ function AdminPage() {
                         value={playerNick}
                         onChange={(e) => setPlayerNick(e.target.value)}
                         placeholder="Ex: Dark_Shadow11"
-                        className="w-full text-[9px] p-2 bg-[#1a1825] border border-[#444] text-white focus:outline-none focus:border-[#ff7800]"
+                        className="w-full text-[9px] p-2 bg-obsidian-light border border-[#444] text-white focus:outline-none focus:border-pumpkin"
                       />
                     </div>
                   </div>
@@ -765,11 +793,11 @@ function AdminPage() {
                   {/* Skin Preview Box */}
                   <div className="flex items-center gap-3 bg-[#14121d] p-2 border border-[#333]">
                     {playerNick.trim() ? (
-                      <>
+                      <>text-pumpkin-light
                         <PlayerHead nick={playerNick.trim()} size={36} />
                         <div>
-                          <div className="text-[9px] text-[#ff9a3c]">{playerNick.trim()}</div>
-                          <div className="text-[7px] text-[#00c9a7]">Skin detectada ✓</div>
+                          <div className="text-[9px] text-pumpkin-light">{playerNick.trim()}</div>
+                          <div className="text-[7px] text-warden-teal">Skin detectada ✓</div>
                         </div>
                       </>
                     ) : (
@@ -787,11 +815,10 @@ function AdminPage() {
                         type="button"
                         key={theme.id}
                         onClick={() => setSelectedTheme(theme.id)}
-                        className={`p-2 border text-center transition-all ${
-                          selectedTheme === theme.id
-                            ? 'bg-[#2a1705] border-[#ff7800] text-[#ff9a3c] shadow-[0_0_10px_rgba(255,120,0,0.4)]'
-                            : 'bg-[#14121d] border-[#333] text-[#777] hover:border-[#555]'
-                        }`}
+                        className={`p-2 border text-center transition-all ${selectedTheme === theme.id
+                          ? 'bg-[#2a1705] border-pumpkin text-pumpkin-light shadow-[0_0_10px_rgba(255,120,0,0.4)]'
+                          : 'bg-[#14121d] border-[#333] text-[#777] hover:border-[#555]'
+                          }`}
                       >
                         <div className="text-base mb-1">{theme.icon}</div>
                         <div className="text-[7px] leading-tight">{theme.name}</div>
@@ -821,7 +848,7 @@ function AdminPage() {
                           setImagePreview(e.target.value)
                         }}
                         placeholder="https://..."
-                        className="w-full text-[8px] p-1.5 mt-1 bg-[#1a1825] border border-[#444] text-white focus:outline-none focus:border-[#ff7800]"
+                        className="w-full text-[8px] p-1.5 mt-1 bg-obsidian-light border border-[#444] text-white focus:outline-none focus:border-pumpkin"
                       />
                     </div>
 
@@ -854,19 +881,19 @@ function AdminPage() {
               </form>
             </div>
           ) : (
-            <div className="p-8 bg-[#0e0d13] border-2 border-[#333] text-center text-[9px] text-[#666]">
+            <div className="p-8 bg-obsidian border-2 border-[#333] text-center text-[9px] text-[#666]">
               Crie ou selecione uma rodada ao lado para gerenciar os competidores.
             </div>
           )}
 
           {/* Competitors List */}
           {currentRound && (
-            <div className="p-4 bg-[#0e0d13] border-2 border-[#333]">
+            <div className="p-4 bg-obsidian border-2 border-[#333]">
               <div className="flex items-center justify-between mb-4">
                 <h2 className="text-xs text-[#aaa]">
                   COMPETIDORES NA RODADA ({competitors.length})
                 </h2>
-                <span className="text-[8px] text-[#ff7800]">Total: {votes.length} votos</span>
+                <span className="text-[8px] text-pumpkin">Total: {votes.length} votos</span>
               </div>
 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -878,10 +905,10 @@ function AdminPage() {
                     {/* Top Row: Place, Skin, Nick, Edit & Delete Actions */}
                     <div className="flex items-center justify-between gap-2">
                       <div className="flex items-center gap-2">
-                        <span className="text-[8px] text-[#ff7800]">#{i + 1}</span>
+                        <span className="text-[8px] text-pumpkin-light">#{i + 1}</span>
                         <PlayerHead nick={c.player_nick} size={24} />
                         <div>
-                          <div className="text-[9px] text-[#ff9a3c]">{c.player_nick}</div>
+                          <div className="text-[9px] text-pumpkin-light">{c.player_nick}</div>
                           <div className="text-[7px] text-[#666]">{c.frame_theme}</div>
                         </div>
                       </div>
@@ -889,14 +916,14 @@ function AdminPage() {
                       <div className="flex items-center gap-1">
                         <button
                           onClick={() => handleStartEdit(c)}
-                          className="text-[#ff9a3c] hover:text-[#ffcc00] p-1.5 transition-colors bg-[#1a1825] border border-[#ff780044] rounded hover:border-[#ff7800]"
+                          className="text-pumpkin-light hover:text-[#ffcc00] p-1.5 transition-colors bg-[#1a1825] border border-[#ff780044] rounded hover:border-[#ff7800]"
                           title="Editar competidor"
                         >
                           <Pencil size={13} />
                         </button>
                         <button
                           onClick={() => handleDeleteCompetitor(c.id)}
-                          className="text-[#f55] hover:text-[#f22] p-1.5 transition-colors bg-[#1a1825] border border-[#f554] rounded hover:border-[#f55]"
+                          className="text-[#f55] hover:text-[#f22] p-1.5 transition-colors bg-obsidian-light border border-[#f554] rounded hover:border-[#f55]"
                           title="Remover competidor"
                         >
                           <Trash2 size={13} />
@@ -912,236 +939,242 @@ function AdminPage() {
                     {/* Vote stats */}
                     <div className="flex justify-between items-center text-[8px] border-t border-[#222] pt-2">
                       <span className="text-[#888]">{c.vote_count} votos</span>
-                      <span className="text-[#00c9a7]">{c.vote_percentage}%</span>
+                      <span className="text-warden-teal">{c.vote_percentage}%</span>
                     </div>
                   </div>
                 ))}
               </div>
 
-              {competitors.length === 0 && (
-                <p className="text-[8px] text-[#555] text-center py-6">
-                  Nenhum competidor cadastrado nesta rodada ainda.
-                </p>
-              )}
-            </div>
-          )}
-        </div>
-      </div>
+              {
+                competitors.length === 0 && (
+                  <p className="text-[8px] text-[#555] text-center py-6">
+                    Nenhum competidor cadastrado nesta rodada ainda.
+                  </p>
+                )
+              }
+            </div >
+          )
+          }
+        </div >
+      </div >
 
       {/* Modal de Edição de Competidor */}
-      {editingCompetitor && (
-        <div
-          className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/85 backdrop-blur-sm"
-          onClick={handleCancelEdit}
-        >
+      {
+        editingCompetitor && (
           <div
-            className="relative max-w-xl w-full bg-[#0e0d13] border-4 border-[#ff7800] p-5 shadow-[0_0_50px_rgba(255,120,0,0.5)] max-h-[90vh] overflow-y-auto"
-            onClick={(e) => e.stopPropagation()}
+            className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/85 backdrop-blur-sm"
+            onClick={handleCancelEdit}
           >
-            {/* Header do Modal */}
-            <div className="flex items-center justify-between pb-3 mb-4 border-b-2 border-[#ff780044]">
-              <h2 className="text-xs text-[#ff9a3c] flex items-center gap-2">
-                <Pencil size={14} /> EDITAR COMPETIDOR
-              </h2>
-              <button
-                onClick={handleCancelEdit}
-                className="text-[#888] hover:text-white p-1"
-              >
-                <X size={18} />
-              </button>
-            </div>
-
-            <form onSubmit={handleSaveEdit} className="space-y-4">
-              {/* Nick & Skin Preview */}
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <div>
-                  <label className="text-[8px] text-[#aaa] block mb-1.5">NICK NO MINECRAFT:</label>
-                  <input
-                    type="text"
-                    value={editNick}
-                    onChange={(e) => setEditNick(e.target.value)}
-                    placeholder="Ex: Dark_Shadow11"
-                    className="w-full text-[9px] p-2 bg-[#1a1825] border border-[#444] text-white focus:outline-none focus:border-[#ff7800]"
-                  />
-                </div>
-
-                {/* Skin Preview Box */}
-                <div className="flex items-center gap-3 bg-[#14121d] p-2 border border-[#333]">
-                  {editNick.trim() ? (
-                    <>
-                      <PlayerHead nick={editNick.trim()} size={36} />
-                      <div>
-                        <div className="text-[9px] text-[#ff9a3c]">{editNick.trim()}</div>
-                        <div className="text-[7px] text-[#00c9a7]">Skin atualizada ✓</div>
-                      </div>
-                    </>
-                  ) : (
-                    <div className="text-[7px] text-[#666]">Digite o nick</div>
-                  )}
-                </div>
+            <div
+              className="relative max-w-xl w-full bg-obsidian border-4 border-pumpkin p-5 shadow-[0_0_50px_rgba(255,120,0,0.5)] max-h-[90vh] overflow-y-auto"
+              onClick={(e) => e.stopPropagation()}
+            >text-pumpkin-light
+              {/* Header do Modal */}
+              <div className="flex items-center justify-between pb-3 mb-4 border-b-2 border-[#ff780044]">
+                <h2 className="text-xs text-pumpkin-light flex items-center gap-2">
+                  <Pencil size={14} /> EDITAR COMPETIDOR
+                </h2>
+                <button
+                  onClick={handleCancelEdit}
+                  className="text-[#888] hover:text-white p-1"
+                >
+                  <X size={18} />
+                </button>
               </div>
 
-              {/* Theme Selector */}
-              <div>
-                <label className="text-[8px] text-[#aaa] block mb-2">MOLDURA TEMÁTICA:</label>
-                <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-2">
-                  {THEMES.map((theme) => (
-                    <button
-                      type="button"
-                      key={theme.id}
-                      onClick={() => setEditTheme(theme.id)}
-                      className={`p-2 border text-center transition-all ${
-                        editTheme === theme.id
-                          ? 'bg-[#2a1705] border-[#ff7800] text-[#ff9a3c] shadow-[0_0_10px_rgba(255,120,0,0.4)]'
-                          : 'bg-[#14121d] border-[#333] text-[#777] hover:border-[#555]'
-                      }`}
-                    >
-                      <div className="text-base mb-1">{theme.icon}</div>
-                      <div className="text-[7px] leading-tight">{theme.name}</div>
-                    </button>
-                  ))}
-                </div>
-              </div>
-
-              {/* Image Upload / Replacement */}
-              <div>
-                <label className="text-[8px] text-[#aaa] block mb-1.5">SUBSTITUIR FOTO / SCREENSHOT:</label>
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 items-center">
+              <form onSubmit={handleSaveEdit} className="space-y-4">
+                {/* Nick & Skin Preview */}
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div>
+                    <label className="text-[8px] text-[#aaa] block mb-1.5">NICK NO MINECRAFT:</label>
                     <input
-                      type="file"
-                      accept="image/*"
-                      ref={editFileInputRef}
-                      onChange={handleEditFileChange}
-                      className="text-[8px] text-[#888] file:mr-2 file:py-1.5 file:px-3 file:border-0 file:text-[8px] file:font-['Press_Start_2P'] file:bg-[#ff7800] file:text-black cursor-pointer"
-                    />
-                    <div className="text-[7px] text-[#555] mt-1.5">Ou cole nova URL:</div>
-                    <input
-                      type="url"
-                      value={editImageUrlInput}
-                      onChange={(e) => {
-                        setEditImageUrlInput(e.target.value)
-                        setEditImagePreview(e.target.value)
-                      }}
-                      placeholder="https://..."
-                      className="w-full text-[8px] p-1.5 mt-1 bg-[#1a1825] border border-[#444] text-white focus:outline-none focus:border-[#ff7800]"
+                      type="text"
+                      value={editNick}
+                      onChange={(e) => setEditNick(e.target.value)}
+                      placeholder="Ex: Dark_Shadow11"
+                      className="w-full text-[9px] p-2 bg-obsidian-light border border-[#444] text-white focus:outline-none focus:border-pumpkin"
                     />
                   </div>
 
-                  {/* Preview da Imagem no Modal */}
-                  <div className="aspect-video bg-[#050508] border border-[#333] flex items-center justify-center overflow-hidden">
-                    {editImagePreview ? (
-                      <img src={editImagePreview} alt="Preview" className="w-full h-full object-cover" />
+                  {/* Skin Preview Box */}
+                  <div className="flex items-center gap-3 bg-[#14121d] p-2 border border-[#333]">
+                    {editNick.trim() ? (
+                      <>text-pumpkin-light
+                        <PlayerHead nick={editNick.trim()} size={36} />
+                        <div>
+                          <div className="text-[9px] text-pumpkin-light">{editNick.trim()}</div>
+                          <div className="text-[7px] text-warden-teal">Skin atualizada ✓</div>
+                        </div>
+                      </>
                     ) : (
-                      <div className="text-[7px] text-[#444]">Sem foto</div>
+                      <div className="text-[7px] text-[#666]">Digite o nick</div>
                     )}
                   </div>
                 </div>
-              </div>
 
-              {editError && (
-                <p className="text-[8px] text-[#ff4444] bg-[#200] p-2 border border-[#600]">{editError}</p>
-              )}
+                {/* Theme Selector */}
+                <div>
+                  <label className="text-[8px] text-[#aaa] block mb-2">MOLDURA TEMÁTICA:</label>
+                  <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-2">
+                    {THEMES.map((theme) => (
+                      <button
+                        type="button"
+                        key={theme.id}
+                        onClick={() => setEditTheme(theme.id)}
+                        className={`p-2 border text-center transition-all ${editTheme === theme.id
+                          ? 'bg-[#2a1705] border-pumpkin text-pumpkin-light shadow-[0_0_10px_rgba(255,120,0,0.4)]'
+                          : 'bg-[#14121d] border-[#333] text-[#777] hover:border-[#555]'
+                          }`}
+                      >
+                        <div className="text-base mb-1">{theme.icon}</div>
+                        <div className="text-[7px] leading-tight">{theme.name}</div>
+                      </button>
+                    ))}
+                  </div>
+                </div>
 
-              {/* Ações do Formulário */}
-              <div className="flex gap-2 pt-2 border-t border-[#333]">
-                <MinecraftButton
-                  variant="pumpkin"
-                  type="submit"
-                  isLoading={editUploading}
-                  className="flex-1"
-                >
-                  ✓ Salvar Alterações
-                </MinecraftButton>
-                <button
-                  type="button"
-                  onClick={handleCancelEdit}
-                  className="px-4 py-2 bg-[#200] border-2 border-[#600] text-[#ff8888] text-[8px] hover:bg-[#300] transition-colors"
-                >
-                  Cancelar
-                </button>
-              </div>
-            </form>
+                {/* Image Upload / Replacement */}
+                <div>
+                  <label className="text-[8px] text-[#aaa] block mb-1.5">SUBSTITUIR FOTO / SCREENSHOT:</label>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 items-center">
+                    <div>
+                      <input
+                        type="file"
+                        accept="image/*"
+                        ref={editFileInputRef}
+                        onChange={handleEditFileChange}
+                        className="text-[8px] text-[#888] file:mr-2 file:py-1.5 file:px-3 file:border-0 file:text-[8px] file:font-['Press_Start_2P'] file:bg-[#ff7800] file:text-black cursor-pointer"
+                      />
+                      <div className="text-[7px] text-[#555] mt-1.5">Ou cole nova URL:</div>
+                      <input
+                        type="url"
+                        value={editImageUrlInput}
+                        onChange={(e) => {
+                          setEditImageUrlInput(e.target.value)
+                          setEditImagePreview(e.target.value)
+                        }}
+                        placeholder="https://..."
+                        className="w-full text-[8px] p-1.5 mt-1 bg-obsidian-light border border-[#444] text-white focus:outline-none focus:border-pumpkin"
+                      />
+                    </div>
+
+                    {/* Preview da Imagem no Modal */}
+                    <div className="aspect-video bg-[#050508] border border-[#333] flex items-center justify-center overflow-hidden">
+                      {editImagePreview ? (
+                        <img src={editImagePreview} alt="Preview" className="w-full h-full object-cover" />
+                      ) : (
+                        <div className="text-[7px] text-[#444]">Sem foto</div>
+                      )}
+                    </div>
+                  </div>
+                </div>
+
+                {editError && (
+                  <p className="text-[8px] text-[#ff4444] bg-[#200] p-2 border border-[#600]">{editError}</p>
+                )}
+
+                {/* Ações do Formulário */}
+                <div className="flex gap-2 pt-2 border-t border-[#333]">
+                  <MinecraftButton
+                    variant="pumpkin"
+                    type="submit"
+                    isLoading={editUploading}
+                    className="flex-1"
+                  >
+                    ✓ Salvar Alterações
+                  </MinecraftButton>
+                  <button
+                    type="button"
+                    onClick={handleCancelEdit}
+                    className="px-4 py-2 bg-[#200] border-2 border-[#600] text-[#ff8888] text-[8px] hover:bg-[#300] transition-colors"
+                  >
+                    Cancelar
+                  </button>
+                </div>
+              </form>
+            </div>
           </div>
-        </div>
-      )}
+        )
+      }
 
       {/* Change Password Modal */}
-      {showChangePassword && (
-        <div
-          className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/85 backdrop-blur-sm"
-          onClick={() => setShowChangePassword(false)}
-        >
+      {
+        showChangePassword && (
           <div
-            className="relative max-w-md w-full bg-[#0e0d13] border-4 border-[#00c9a7] p-5 shadow-[0_0_50px_rgba(0,201,167,0.5)]"
-            onClick={(e) => e.stopPropagation()}
+            className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/85 backdrop-blur-sm"
+            onClick={() => setShowChangePassword(false)}
           >
-            <div className="flex items-center justify-between pb-3 mb-4 border-b-2 border-[#00c9a744]">
-              <h2 className="text-xs text-[#00c9a7] flex items-center gap-2">
-                <Lock size={14} /> ALTERAR SENHA
-              </h2>
-              <button
-                onClick={() => { setShowChangePassword(false); setNewPassword(''); setConfirmPassword(''); }}
-                className="text-[#888] hover:text-white p-1"
-              >
-                <X size={18} />
-              </button>
-            </div>
-
-            <form onSubmit={handleChangePassword} className="space-y-4">
-              <div className="text-left space-y-2">
-                <label className="text-[8px] text-[#aaa] block mb-1.5 flex items-center gap-1">
-                  <Lock size={12} /> Nova Senha
-                </label>
-                <input
-                  type="password"
-                  value={newPassword}
-                  onChange={(e) => setNewPassword(e.target.value)}
-                  placeholder="Mínimo 6 caracteres"
-                  autoComplete="new-password"
-                  className="w-full text-[9px] py-3 px-4 bg-[#1a1825] border-2 border-[#00c9a766] text-[#00c9a7] font-['Press_Start_2P'] focus:outline-none focus:border-[#00c9a7]"
-                />
-              </div>
-
-              <div className="text-left space-y-2">
-                <label className="text-[8px] text-[#aaa] block mb-1.5 flex items-center gap-1">
-                  <Lock size={12} /> Confirmar Nova Senha
-                </label>
-                <input
-                  type="password"
-                  value={confirmPassword}
-                  onChange={(e) => setConfirmPassword(e.target.value)}
-                  placeholder="Confirme a nova senha"
-                  autoComplete="new-password"
-                  className="w-full text-[9px] py-3 px-4 bg-[#1a1825] border-2 border-[#00c9a766] text-[#00c9a7] font-['Press_Start_2P'] focus:outline-none focus:border-[#00c9a7]"
-                />
-              </div>
-
-              {authError && (
-                <p className="text-[8px] text-[#ff4444] bg-[#200] p-2 border border-[#600]">{authError}</p>
-              )}
-
-              <div className="flex gap-2 pt-2 border-t border-[#333]">
-                <MinecraftButton
-                  variant="pale"
-                  type="submit"
-                  isLoading={authLoading}
-                  className="flex-1"
-                >
-                  ✓ Salvar Nova Senha
-                </MinecraftButton>
+            <div
+              className="relative max-w-md w-full bg-obsidian border-4 border-[#00c9a7] p-5 shadow-[0_0_50px_rgba(0,201,167,0.5)]"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <div className="flex items-center justify-between pb-3 mb-4 border-b-2 border-[#00c9a744]">
+                <h2 className="text-xs text-warden-teal flex items-center gap-2">
+                  <Lock size={14} /> ALTERAR SENHA
+                </h2>
                 <button
-                  type="button"
                   onClick={() => { setShowChangePassword(false); setNewPassword(''); setConfirmPassword(''); }}
-                  className="px-4 py-2 bg-[#200] border-2 border-[#600] text-[#ff8888] text-[8px] hover:bg-[#300] transition-colors"
+                  className="text-[#888] hover:text-white p-1"
                 >
-                  Cancelar
+                  <X size={18} />
                 </button>
               </div>
-            </form>
+
+              <form onSubmit={handleChangePassword} className="space-y-4">
+                <div className="text-left space-y-2">
+                  <label className="text-[8px] text-[#aaa] block mb-1.5 flex items-center gap-1">
+                    <Lock size={12} /> Nova Senha
+                  </label>
+                  <input
+                    type="password"
+                    value={newPassword}
+                    onChange={(e) => setNewPassword(e.target.value)}
+                    placeholder="Mínimo 6 caracteres"
+                    autoComplete="new-password"
+                    className="w-full text-[9px] py-3 px-4 bg-obsidian-light border-2 border-[#00c9a766] text-warden-teal font-['Press_Start_2P'] focus:outline-none focus:border-[#00c9a7]"
+                  />
+                </div>
+
+                <div className="text-left space-y-2">
+                  <label className="text-[8px] text-[#aaa] block mb-1.5 flex items-center gap-1">
+                    <Lock size={12} /> Confirmar Nova Senha
+                  </label>
+                  <input
+                    type="password"
+                    value={confirmPassword}
+                    onChange={(e) => setConfirmPassword(e.target.value)}
+                    placeholder="Confirme a nova senha"
+                    autoComplete="new-password"
+                    className="w-full text-[9px] py-3 px-4 bg-obsidian-light border-2 border-[#00c9a766] text-warden-teal font-['Press_Start_2P'] focus:outline-none focus:border-[#00c9a7]"
+                  />
+                </div>
+
+                {authError && (
+                  <p className="text-[8px] text-[#ff4444] bg-[#200] p-2 border border-[#600]">{authError}</p>
+                )}
+
+                <div className="flex gap-2 pt-2 border-t border-[#333]">
+                  <MinecraftButton
+                    variant="pale"
+                    type="submit"
+                    isLoading={authLoading}
+                    className="flex-1"
+                  >
+                    ✓ Salvar Nova Senha
+                  </MinecraftButton>
+                  <button
+                    type="button"
+                    onClick={() => { setShowChangePassword(false); setNewPassword(''); setConfirmPassword(''); }}
+                    className="px-4 py-2 bg-[#200] border-2 border-[#600] text-[#ff8888] text-[8px] hover:bg-[#300] transition-colors"
+                  >
+                    Cancelar
+                  </button>
+                </div>
+              </form>
+            </div>
           </div>
-        </div>
-      )}
-    </div>
+        )
+      }
+    </div >
   )
 }

@@ -1,10 +1,9 @@
 // DatePickerTime — padrão exato shadcn/ui date-picker com time input
 // Adaptado de https://ui.shadcn.com/docs/components/base/date-picker
-import * as React from 'react'
-import { format } from 'date-fns'
+import { addMinutes, format } from 'date-fns'
 import { ptBR } from 'date-fns/locale'
 import { ChevronDownIcon } from 'lucide-react'
-import { addMinutes } from 'date-fns'
+import * as React from 'react'
 
 import { Button } from '~/components/shadcn/button'
 import { Calendar } from '~/components/shadcn/calendar'
@@ -69,7 +68,7 @@ export function DateTimePicker({ value, onChange, label, minDate, disabled = fal
                 disabled={disabled}
                 className={cn(
                   'w-full justify-between font-normal text-[8px] font-["Press_Start_2P"]',
-                  'bg-[#1a1825] border-[#555] text-left hover:bg-[#1a1825] hover:border-[#ff7800]',
+                  'bg-obsidian-light border-[#555] text-left hover:bg-obsidian-light hover:border-pumpkin',
                   'h-auto py-2.5 px-2.5',
                   !value && 'text-[#555]',
                   value && 'text-[#ffcc66]',
@@ -77,11 +76,11 @@ export function DateTimePicker({ value, onChange, label, minDate, disabled = fal
                 )}
               >
                 {value ? format(value, 'dd/MM/yyyy', { locale: ptBR }) : 'Selecionar...'}
-                <ChevronDownIcon className="h-3 w-3 text-[#ff9a3c] shrink-0" />
+                <ChevronDownIcon className="h-3 w-3 text-pumpkin-light shrink-0" />
               </Button>
             </PopoverTrigger>
             <PopoverContent
-              className="w-auto p-0 border-2 border-[#ff7800] bg-[#0e0d13] shadow-[0_8px_32px_rgba(0,0,0,0.95)]"
+              className="w-auto p-0 border-2 border-pumpkin bg-obsidian shadow-[0_8px_32px_rgba(0,0,0,0.95)]"
               align="start"
             >
               <Calendar
@@ -109,8 +108,8 @@ export function DateTimePicker({ value, onChange, label, minDate, disabled = fal
             disabled={disabled}
             className={cn(
               'w-full text-[9px] py-2.5 px-2 font-["Press_Start_2P"]',
-              'bg-[#1a1825] border border-[#555] text-[#ffcc00]',
-              'focus:outline-none focus:border-[#ff7800]',
+              'bg-obsidian-light border border-[#555] text-[#ffcc00]',
+              'focus:outline-none focus:border-pumpkin',
               'appearance-none',
               '[&::-webkit-calendar-picker-indicator]:hidden',
               '[&::-webkit-calendar-picker-indicator]:appearance-none',
@@ -135,7 +134,7 @@ export function DateTimePicker({ value, onChange, label, minDate, disabled = fal
             onClick={() => applyQuickAdd(mins)}
             disabled={disabled}
             className={cn(
-              'text-[7px] px-2 py-1 bg-[#1a1825] border border-[#ff780055] text-[#ff9a3c] hover:bg-[#2a1705] transition-colors font-["Press_Start_2P"]',
+              'text-[7px] px-2 py-1 bg-obsidian-light border border-[#ff780055] text-pumpkin-light hover:bg-[#2a1705] transition-colors font-["Press_Start_2P"]',
               disabled && 'opacity-50 cursor-not-allowed'
             )}
           >

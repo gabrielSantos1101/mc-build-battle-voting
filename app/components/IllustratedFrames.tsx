@@ -1,5 +1,3 @@
-import React from 'react'
-import type { FrameTheme } from '~/lib/supabase'
 
 // ============================================================
 // 1. WARDEN & SCULK FRAME (Deep Dark)
@@ -133,8 +131,8 @@ export function JackPumpkinFrameOverlay() {
       </div>
 
       {/* Cantos com Tijolos de Netherrack e Chamas */}
-      <div className="absolute top-0 left-0 w-6 h-6 border-t-4 border-l-4 border-[#ff7800]" />
-      <div className="absolute top-0 right-0 w-6 h-6 border-t-4 border-r-4 border-[#ff7800]" />
+      <div className="absolute top-0 left-0 w-6 h-6 border-t-4 border-l-4 border-pumpkin" />
+      <div className="absolute top-0 right-0 w-6 h-6 border-t-4 border-r-4 border-pumpkin" />
       <div className="absolute bottom-0 left-0 w-8 h-8 border-b-4 border-l-4 border-[#00e5ff] shadow-[0_0_8px_#00e5ff]">
         <div className="absolute bottom-1 left-1 w-2 h-4 bg-[#00e5ff] animate-soul-flicker" />
       </div>
@@ -143,7 +141,7 @@ export function JackPumpkinFrameOverlay() {
       </div>
 
       {/* Base: Mini Abóboras de Rodapé */}
-      <div className="absolute -bottom-3 left-1/2 -translate-x-1/2 px-3 py-1 bg-[#4d1f00] border-2 border-[#ff7800] flex items-center gap-2 shadow-lg">
+      <div className="absolute -bottom-3 left-1/2 -translate-x-1/2 px-3 py-1 bg-[#4d1f00] border-2 border-pumpkin flex items-center gap-2 shadow-lg">
         <div className="w-3 h-3 bg-[#ff7800] rounded-sm" />
         <div className="text-[6px] text-[#ffcc00] font-['Press_Start_2P']">HALLOWEEN</div>
         <div className="w-3 h-3 bg-[#ff7800] rounded-sm" />

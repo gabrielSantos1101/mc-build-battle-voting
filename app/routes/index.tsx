@@ -1,26 +1,24 @@
 import { createFileRoute } from '@tanstack/react-router'
-import React, { useEffect, useRef, useState } from 'react'
 import { motion } from 'framer-motion'
-import { X, Clock, AlertCircle } from 'lucide-react'
-import {
-  supabase,
-  getDeviceId,
-  hasVotedInRound,
-  markVotedInRound,
-  computeVoteStats,
-  getRemainingSeconds,
-  formatTimeMMSS,
-  initializeAuth,
-  canVote,
-  getAuthPayload,
-  getVotingTimeStatus,
-  getVotingTimeStatusText,
-  canVoteByTime,
-  getSecondsUntilStart,
-} from '~/lib/supabase'
-import type { Round, Competitor, Vote, CompetitorWithVotes, FrameTheme, IPInfo, VotingTimeStatus } from '~/lib/supabase'
-import { MinecraftHorrorFrame, FRAME_CONFIGS } from '~/components/MinecraftHorrorFrame'
+import { X } from 'lucide-react'
+import { useEffect, useRef, useState } from 'react'
+import { FRAME_CONFIGS, MinecraftHorrorFrame } from '~/components/MinecraftHorrorFrame'
 import { PlayerHead, VoteBar } from '~/components/ui'
+import type { Competitor, CompetitorWithVotes, FrameTheme, IPInfo, Round, Vote, VotingTimeStatus } from '~/lib/supabase'
+import {
+  canVote,
+  canVoteByTime,
+  computeVoteStats,
+  formatTimeMMSS,
+  getDeviceId,
+  getRemainingSeconds,
+  getSecondsUntilStart,
+  getVotingTimeStatus,
+  hasVotedInRound,
+  initializeAuth,
+  markVotedInRound,
+  supabase
+} from '~/lib/supabase'
 
 export const Route = createFileRoute('/')({
   component: VotingPage,
@@ -56,7 +54,7 @@ function CompetitorCard({
       animate={{ opacity: 1, y: 0 }}
       exit={{ opacity: 0, scale: 0.95 }}
       transition={{ duration: 0.25 }}
-      className="w-full max-w-[500px] mx-auto"
+      className="w-full max-w-125 mx-auto"
     >
       <MinecraftHorrorFrame
         theme={competitor.frame_theme as FrameTheme}
@@ -66,7 +64,7 @@ function CompetitorCard({
         <div className="w-full h-full flex flex-col justify-between py-1">
           {/* 1. Screenshot da Construção — clique para zoom */}
           <div
-            className="relative w-full aspect-[4/3] rounded-sm overflow-hidden border-2 border-black/95 bg-black/90 shadow-md group shrink-0 cursor-zoom-in"
+            className="relative w-full aspect-4/3 rounded-sm overflow-hidden border-2 border-black/95 bg-black/90 shadow-md group shrink-0 cursor-zoom-in"
             onClick={(e) => {
               e.stopPropagation()
               onZoom(competitor)
@@ -102,7 +100,7 @@ function CompetitorCard({
               </div>
             </div>
             {showResults && roundStatus !== 'draft' && (
-              <div className="text-[7px] text-[#ff9a3c] font-['Press_Start_2P'] shrink-0">
+              <div className="text-[7px] text-pumpkin-light font-['Press_Start_2P'] shrink-0">
                 {competitor.vote_count}v
               </div>
             )}
@@ -209,13 +207,13 @@ function ZoomModal({
       onClick={onClose}
     >
       <div
-        className="relative max-w-4xl w-full bg-[#0e0d13] border-4 border-[#ff7800] p-2 shadow-[0_0_50px_rgba(255,120,0,0.5)]"
+        className="relative max-w-4xl w-full bg-obsidian border-4 border-pumpkin p-2 shadow-[0_0_50px_rgba(255,120,0,0.5)]"
         onClick={(e) => e.stopPropagation()}
       >
-        <div className="flex items-center justify-between p-2 mb-2 bg-[#1a1825] border-b-2 border-[#ff780044]">
+        <div className="flex items-center justify-between p-2 mb-2 bg-obsidian-light border-b-2 border-[#ff780044]">
           <div className="flex items-center gap-2">
             <PlayerHead nick={competitor.player_nick} size={24} />
-            <span className="text-xs text-[#ff9a3c] font-['Press_Start_2P']">
+            <span className="text-xs text-pumpkin-light font-['Press_Start_2P']">
               {competitor.player_nick}
             </span>
           </div>
@@ -264,7 +262,7 @@ function WaitingScreen({ status }: { status: string }) {
   return (
     <div className="text-center py-24 px-4">
       <div className="text-6xl mb-4 animate-bounce">{current.icon}</div>
-      <h2 className="text-sm md:text-base text-[#ff7800] font-['Press_Start_2P'] mb-3">
+      <h2 className="text-sm md:text-base text-pumpkin font-['Press_Start_2P'] mb-3">
         {current.title}
       </h2>
       <p className="text-[9px] text-[#888] font-['Press_Start_2P'] max-w-md mx-auto leading-relaxed">
@@ -298,6 +296,7 @@ function VotingPage() {
     }
 
     function syncTimer() {
+      if (!round) return
       const status = getVotingTimeStatus(round.starts_at, round.ends_at)
       setVotingTimeStatus(status)
 
@@ -417,6 +416,17 @@ function VotingPage() {
     if (!round || hasVoted || !authReady) return
     setError(null)
 
+    // Verifica se votação está no horário permitido
+    if (!canVoteByTime(round.starts_at, round.ends_at)) {
+      const status = getVotingTimeStatus(round.starts_at, round.ends_at)
+      if (status === 'not_started') {
+        setError('A votação ainda não começou!')
+      } else {
+        setError('A votação já encerrou!')
+      }
+      return
+    }
+
     const { canVote: allowed, reason } = await canVote(round.id)
     if (!allowed) {
       if (reason === 'device') {
@@ -461,13 +471,13 @@ function VotingPage() {
   if (loading) {
     return (
       <div
-        className="min-h-screen flex items-center justify-center font-['Press_Start_2P'] text-xs text-[#ff7800]"
+        className="min-h-screen flex items-center justify-center font-['Press_Start_2P'] text-xs text-pumpkin"
         style={{
           backgroundImage: 'url(/textures/deepslate-pattern.svg)',
           backgroundRepeat: 'repeat',
         }}
       >
-        <div className="animate-pulse flex items-center gap-2 bg-black/80 px-6 py-4 border-2 border-[#ff7800] rounded">
+        <div className="animate-pulse flex items-center gap-2 bg-black/80 px-6 py-4 border-2 border-pumpkin rounded">
           <span>🎃</span> CARREGANDO ARENA...
         </div>
       </div>
@@ -521,13 +531,13 @@ function VotingPage() {
                   BUILD BATTLE: HALLOWEEN EDITION
                 </h1>
                 {round?.title && (
-                  <span className="hidden xl:inline-block text-[8px] text-[#ff9a3c] opacity-80 border-l border-[#ff9a3c44] pl-3">
+                  <span className="hidden xl:inline-block text-[8px] text-pumpkin-light opacity-80 border-l border-[#ff9a3c44] pl-3">
                     {round.title}
                   </span>
                 )}
               </div>
 
-{/* Pílula Entalhada Integrada na Madeira (Timer / Status) */}
+              {/* Pílula Entalhada Integrada na Madeira (Timer / Status) */}
               <div
                 className="px-4 py-1.5 rounded-full flex items-center gap-2 border select-none shrink-0"
                 style={{
@@ -537,7 +547,7 @@ function VotingPage() {
                 }}
               >
                 {votingTimeStatus === 'not_started' ? (
-                  <span className="text-[9px] sm:text-[10px] text-[#ff9a3c] font-bold tracking-wider" style={{ textShadow: '0 0 8px rgba(255,154,60,0.6), 1px 1px 0 #000' }}>
+                  <span className="text-[9px] sm:text-[10px] text-pumpkin-light font-bold tracking-wider" style={{ textShadow: '0 0 8px rgba(255,154,60,0.6), 1px 1px 0 #000' }}>
                     ⏳ AGUARDANDO INÍCIO
                   </span>
                 ) : votingTimeStatus === 'active' ? (
@@ -546,8 +556,7 @@ function VotingPage() {
                       VOTAÇÃO TERMINA EM:
                     </span>
                     <span
-                      className={`text-[10px] sm:text-[11px] font-bold tracking-wider ${
-                        remainingSeconds <= 30 ? 'text-[#ff3333] animate-pulse' : 'text-[#ffaa00]'}
+                      className={`text-[10px] sm:text-[11px] font-bold tracking-wider ${remainingSeconds <= 30 ? 'text-[#ff3333] animate-pulse' : 'text-[#ffaa00]'}
                       `}
                       style={{ textShadow: '0 0 8px rgba(255,170,0,0.7), 1px 1px 0 #000' }}
                     >
@@ -567,7 +576,7 @@ function VotingPage() {
                     🏆 VOTAÇÃO ENCERRADA
                   </span>
                 ) : round?.status === 'draft' ? (
-                  <span className="text-[9px] sm:text-[10px] text-[#ff9a3c] font-bold tracking-wider" style={{ textShadow: '0 0 8px rgba(255,154,60,0.6), 1px 1px 0 #000' }}>
+                  <span className="text-[9px] sm:text-[10px] text-pumpkin-light font-bold tracking-wider" style={{ textShadow: '0 0 8px rgba(255,154,60,0.6), 1px 1px 0 #000' }}>
                     ⏳ AGUARDANDO ABERTURA
                   </span>
                 ) : (
@@ -594,27 +603,27 @@ function VotingPage() {
 
                 {/* Subtítulo Estilizado com Status Contextual */}
                 <div className="text-center mb-8 bg-black/60 py-2.5 px-4 border-2 border-[#1c1828] max-w-xl mx-auto rounded shadow-lg backdrop-blur-sm">
-                  <h2 className="text-xs sm:text-sm text-[#ff9a3c] mb-1">
+                  <h2 className="text-xs sm:text-sm text-pumpkin-light mb-1">
                     {round.status === 'draft'
                       ? '👁️ MODO APRESENTAÇÃO'
                       : round.status === 'paused'
-                      ? '⏸ VOTAÇÃO PAUSADA'
-                      : round.status === 'finished'
-                      ? '🏆 VOTAÇÃO ENCERRADA'
-                      : hasVoted
-                      ? 'SEU VOTO FOI REGISTRADO!'
-                      : 'ESCOLHA SUA CONSTRUÇÃO FAVORITA'}
+                        ? '⏸ VOTAÇÃO PAUSADA'
+                        : round.status === 'finished'
+                          ? '🏆 VOTAÇÃO ENCERRADA'
+                          : hasVoted
+                            ? 'SEU VOTO FOI REGISTRADO!'
+                            : 'ESCOLHA SUA CONSTRUÇÃO FAVORITA'}
                   </h2>
                   <p className="text-[8px] text-[#888] leading-relaxed">
                     {round.status === 'draft'
                       ? 'Conheça as construções dos participantes! A votação será aberta em breve na live.'
                       : round.status === 'paused'
-                      ? 'O streamer pausou a votação temporariamente.'
-                      : round.status === 'finished'
-                      ? 'Votação finalizada. Confira o pódio na live!'
-                      : hasVoted
-                      ? 'Aguarde o encerramento da rodada para ver o pódio final.'
-                      : 'Clique em VOTAR abaixo da sua construção favorita.'}
+                        ? 'O streamer pausou a votação temporariamente.'
+                        : round.status === 'finished'
+                          ? 'Votação finalizada. Confira o pódio na live!'
+                          : hasVoted
+                            ? 'Aguarde o encerramento da rodada para ver o pódio final.'
+                            : 'Clique em VOTAR abaixo da sua construção favorita.'}
                   </p>
                 </div>
 
@@ -676,17 +685,17 @@ function VotingPage() {
             {ipInfo && (
               <>
                 <span>•</span>
-                <span className="text-[#00c9a7]">{ipInfo.ip}</span>
+                <span className="text-warden-teal">{ipInfo.ip}</span>
               </>
             )}
             <span>•</span>
             <a
               href="/admin"
-              className="text-[#ff9a3c] hover:text-[#ffcc00] hover:underline"
+              className="text-pumpkin-light hover:text-[#ffcc00] hover:underline"
               target="_blank"
               rel="noreferrer"
             >
-              Painel do Streamer (Admin)
+              Painel do Streamer
             </a>
           </div>
         </div>
