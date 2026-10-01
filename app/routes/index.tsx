@@ -13,8 +13,12 @@ import {
   initializeAuth,
   canVote,
   getAuthPayload,
+  getVotingTimeStatus,
+  getVotingTimeStatusText,
+  canVoteByTime,
+  getSecondsUntilStart,
 } from '~/lib/supabase'
-import type { Round, Competitor, Vote, CompetitorWithVotes, FrameTheme, IPInfo } from '~/lib/supabase'
+import type { Round, Competitor, Vote, CompetitorWithVotes, FrameTheme, IPInfo, VotingTimeStatus } from '~/lib/supabase'
 import { MinecraftHorrorFrame, FRAME_CONFIGS } from '~/components/MinecraftHorrorFrame'
 import { PlayerHead, VoteBar } from '~/components/ui'
 
@@ -280,36 +284,44 @@ function VotingPage() {
   const [zoomedCompetitor, setZoomedCompetitor] = useState<CompetitorWithVotes | null>(null)
   const [error, setError] = useState<string | null>(null)
   const [remainingSeconds, setRemainingSeconds] = useState<number>(0)
+  const [votingTimeStatus, setVotingTimeStatus] = useState<VotingTimeStatus>('ended')
   const [ipInfo, setIpInfo] = useState<IPInfo | null>(null)
   const [authReady, setAuthReady] = useState(false)
   const deviceId = useRef(getDeviceId())
 
-  // Sincronização do Timer Baseado Exclusivamente no Timestamp de Término (Zero Drift)
+  // Timer sincronizado com timestamps do servidor (starts_at / ends_at)
   useEffect(() => {
-    if (!round?.ends_at || round.status !== 'active') {
+    if (!round) {
+      setVotingTimeStatus('ended')
       setRemainingSeconds(0)
       return
     }
 
-    function syncTimerWithTimestamp() {
-      // Calcula diretamente a diferença entre a data de encerramento e o Date.now()
-      const remaining = getRemainingSeconds(round?.ends_at ?? null)
-      setRemainingSeconds(remaining)
+    function syncTimer() {
+      const status = getVotingTimeStatus(round.starts_at, round.ends_at)
+      setVotingTimeStatus(status)
+
+      if (status === 'not_started') {
+        setRemainingSeconds(getSecondsUntilStart(round.starts_at))
+      } else if (status === 'active') {
+        setRemainingSeconds(getRemainingSeconds(round.ends_at))
+      } else {
+        setRemainingSeconds(0)
+      }
     }
 
-    syncTimerWithTimestamp()
-    const interval = setInterval(syncTimerWithTimestamp, 1000)
+    syncTimer()
+    const interval = setInterval(syncTimer, 1000)
 
-    // Re-sincroniza imediatamente ao focar na aba ou voltar de sleep
-    window.addEventListener('focus', syncTimerWithTimestamp)
-    document.addEventListener('visibilitychange', syncTimerWithTimestamp)
+    window.addEventListener('focus', syncTimer)
+    document.addEventListener('visibilitychange', syncTimer)
 
     return () => {
       clearInterval(interval)
-      window.removeEventListener('focus', syncTimerWithTimestamp)
-      document.removeEventListener('visibilitychange', syncTimerWithTimestamp)
+      window.removeEventListener('focus', syncTimer)
+      document.removeEventListener('visibilitychange', syncTimer)
     }
-  }, [round?.ends_at, round?.status])
+  }, [round?.starts_at, round?.ends_at])
 
   // Initialize auth (JWT + IP) on mount
   useEffect(() => {
@@ -515,7 +527,7 @@ function VotingPage() {
                 )}
               </div>
 
-              {/* Pílula Entalhada Integrada na Madeira (Timer / Status) */}
+{/* Pílula Entalhada Integrada na Madeira (Timer / Status) */}
               <div
                 className="px-4 py-1.5 rounded-full flex items-center gap-2 border select-none shrink-0"
                 style={{
@@ -524,7 +536,29 @@ function VotingPage() {
                   boxShadow: 'inset 2px 2px 4px rgba(0,0,0,0.85), inset -1px -1px 0 #522710',
                 }}
               >
-                {round?.status === 'paused' ? (
+                {votingTimeStatus === 'not_started' ? (
+                  <span className="text-[9px] sm:text-[10px] text-[#ff9a3c] font-bold tracking-wider" style={{ textShadow: '0 0 8px rgba(255,154,60,0.6), 1px 1px 0 #000' }}>
+                    ⏳ AGUARDANDO INÍCIO
+                  </span>
+                ) : votingTimeStatus === 'active' ? (
+                  <div className="flex items-center gap-2">
+                    <span className="text-[8px] sm:text-[9px] text-[#dcd7cb] tracking-wider" style={{ textShadow: '1px 1px 0 #000' }}>
+                      VOTAÇÃO TERMINA EM:
+                    </span>
+                    <span
+                      className={`text-[10px] sm:text-[11px] font-bold tracking-wider ${
+                        remainingSeconds <= 30 ? 'text-[#ff3333] animate-pulse' : 'text-[#ffaa00]'}
+                      `}
+                      style={{ textShadow: '0 0 8px rgba(255,170,0,0.7), 1px 1px 0 #000' }}
+                    >
+                      {formatTimeMMSS(remainingSeconds)}
+                    </span>
+                  </div>
+                ) : votingTimeStatus === 'ended' ? (
+                  <span className="text-[9px] sm:text-[10px] text-[#ffaa00] font-bold tracking-wider" style={{ textShadow: '0 0 8px rgba(255,170,0,0.6), 1px 1px 0 #000' }}>
+                    🏆 VOTAÇÃO ENCERRADA
+                  </span>
+                ) : round?.status === 'paused' ? (
                   <span className="text-[9px] sm:text-[10px] text-[#ff5555] font-bold tracking-wider" style={{ textShadow: '0 0 8px rgba(255,85,85,0.6), 1px 1px 0 #000' }}>
                     ⏸ VOTAÇÃO PAUSADA
                   </span>
@@ -536,20 +570,6 @@ function VotingPage() {
                   <span className="text-[9px] sm:text-[10px] text-[#ff9a3c] font-bold tracking-wider" style={{ textShadow: '0 0 8px rgba(255,154,60,0.6), 1px 1px 0 #000' }}>
                     ⏳ AGUARDANDO ABERTURA
                   </span>
-                ) : round?.ends_at ? (
-                  <div className="flex items-center gap-2">
-                    <span className="text-[8px] sm:text-[9px] text-[#dcd7cb] tracking-wider" style={{ textShadow: '1px 1px 0 #000' }}>
-                      VOTAÇÃO TERMINA EM:
-                    </span>
-                    <span
-                      className={`text-[10px] sm:text-[11px] font-bold tracking-wider ${
-                        remainingSeconds <= 30 ? 'text-[#ff3333] animate-pulse' : 'text-[#ffaa00]'
-                      }`}
-                      style={{ textShadow: '0 0 8px rgba(255,170,0,0.7), 1px 1px 0 #000' }}
-                    >
-                      {formatTimeMMSS(remainingSeconds)}
-                    </span>
-                  </div>
                 ) : (
                   <span className="text-[9px] sm:text-[10px] text-[#00ff88] font-bold tracking-wider" style={{ textShadow: '0 0 8px rgba(0,255,136,0.6), 1px 1px 0 #000' }}>
                     ● VOTAÇÃO ABERTA

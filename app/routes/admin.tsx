@@ -40,7 +40,7 @@ function AdminPage() {
 
   // Form states (Add competitor)
   const [newRoundTitle, setNewRoundTitle] = useState('')
-  const [endsAtDate, setEndsAtDate] = useState<Date | undefined>(undefined)
+  const [startsAtDate, setStartsAtDate] = useState<Date | undefined>(undefined)
   const [playerNick, setPlayerNick] = useState('')
   const [selectedTheme, setSelectedTheme] = useState<FrameTheme>('jack-pumpkin')
   const [imageFile, setImageFile] = useState<File | null>(null)
@@ -239,6 +239,7 @@ function AdminPage() {
         title: newRoundTitle.trim(),
         status: 'draft',
         show_live_results: true,
+        starts_at: startsAtDate?.toISOString() ?? null,
         ends_at: null,
       })
       .select()
@@ -246,6 +247,7 @@ function AdminPage() {
 
     if (!error && data) {
       setNewRoundTitle('')
+      setStartsAtDate(undefined)
       await loadRounds()
       selectRound(data)
     }
@@ -258,10 +260,13 @@ function AdminPage() {
     const updatePayload: Record<string, any> = { status }
 
     if (status === 'active') {
-      if (endsAtDate) {
-        updatePayload.ends_at = endsAtDate.toISOString()
+      if (startsAtDate) {
+        updatePayload.starts_at = startsAtDate.toISOString()
       }
-    } else if (status === 'finished' || status === 'draft') {
+    } else if (status === 'finished') {
+      updatePayload.ends_at = new Date().toISOString()
+    } else if (status === 'draft') {
+      updatePayload.starts_at = null
       updatePayload.ends_at = null
     }
 
@@ -652,18 +657,30 @@ function AdminPage() {
                 <StatusBadge status={currentRound.status} />
               </div>
 
-              {/* Timer Config — DateTimePicker exato */}
+              {/* Timer Config — DateTimePicker para início da votação */}
               <div className="mb-3 p-2.5 bg-[#14121d] border border-[#333]">
                 <DateTimePicker
-                  value={endsAtDate}
-                  onChange={setEndsAtDate}
-                  label="ENCERRAMENTO DA VOTAÇÃO:"
+                  value={startsAtDate}
+                  onChange={setStartsAtDate}
+                  label="INÍCIO DA VOTAÇÃO:"
                   minDate={new Date()}
+                  disabled={currentRound?.status === 'active' || currentRound?.status === 'finished'}
                 />
-                {currentRound.ends_at && currentRound.status === 'active' && (
+                {currentRound.starts_at && currentRound.status === 'draft' && (
+                  <div className="mt-2 text-[8px] text-[#ff9a3c] flex items-center gap-1.5">
+                    <Clock size={12} className="animate-pulse" />
+                    <span>Inicia: {new Date(currentRound.starts_at).toLocaleString('pt-BR')}</span>
+                  </div>
+                )}
+                {currentRound.starts_at && currentRound.status === 'active' && currentRound.ends_at && (
                   <div className="mt-2 text-[8px] text-[#00ff88] flex items-center gap-1.5">
                     <Clock size={12} className="animate-pulse" />
                     <span>Resta: {formatTimeMMSS(remainingTime)}</span>
+                  </div>
+                )}
+                {(currentRound?.status === 'active' || currentRound?.status === 'finished') && currentRound.starts_at && (
+                  <div className="mt-2 text-[8px] text-[#ff5555] flex items-center gap-1.5">
+                    <span>⚠ Data/hora de início travada (votação já iniciada/encerrada)</span>
                   </div>
                 )}
               </div>

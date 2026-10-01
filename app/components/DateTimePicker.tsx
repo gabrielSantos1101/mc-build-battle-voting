@@ -17,9 +17,10 @@ interface DateTimePickerProps {
   onChange: (date: Date | undefined) => void
   label?: string
   minDate?: Date
+  disabled?: boolean
 }
 
-export function DateTimePicker({ value, onChange, label, minDate }: DateTimePickerProps) {
+export function DateTimePicker({ value, onChange, label, minDate, disabled = false }: DateTimePickerProps) {
   const [open, setOpen] = React.useState(false)
 
   // Valor de hora no formato HH:MM para o input nativo
@@ -65,12 +66,14 @@ export function DateTimePicker({ value, onChange, label, minDate }: DateTimePick
               <Button
                 id="date-field"
                 variant="outline"
+                disabled={disabled}
                 className={cn(
                   'w-full justify-between font-normal text-[8px] font-["Press_Start_2P"]',
                   'bg-[#1a1825] border-[#555] text-left hover:bg-[#1a1825] hover:border-[#ff7800]',
                   'h-auto py-2.5 px-2.5',
                   !value && 'text-[#555]',
                   value && 'text-[#ffcc66]',
+                  disabled && 'opacity-50 cursor-not-allowed'
                 )}
               >
                 {value ? format(value, 'dd/MM/yyyy', { locale: ptBR }) : 'Selecionar...'}
@@ -103,6 +106,7 @@ export function DateTimePicker({ value, onChange, label, minDate }: DateTimePick
             type="time"
             value={timeValue}
             onChange={handleTimeChange}
+            disabled={disabled}
             className={cn(
               'w-full text-[9px] py-2.5 px-2 font-["Press_Start_2P"]',
               'bg-[#1a1825] border border-[#555] text-[#ffcc00]',
@@ -110,6 +114,7 @@ export function DateTimePicker({ value, onChange, label, minDate }: DateTimePick
               'appearance-none',
               '[&::-webkit-calendar-picker-indicator]:hidden',
               '[&::-webkit-calendar-picker-indicator]:appearance-none',
+              disabled && 'opacity-50 cursor-not-allowed'
             )}
           />
         </Field>
@@ -128,12 +133,16 @@ export function DateTimePicker({ value, onChange, label, minDate }: DateTimePick
             key={lbl}
             type="button"
             onClick={() => applyQuickAdd(mins)}
-            className="text-[7px] px-2 py-1 bg-[#1a1825] border border-[#ff780055] text-[#ff9a3c] hover:bg-[#2a1705] transition-colors font-['Press_Start_2P']"
+            disabled={disabled}
+            className={cn(
+              'text-[7px] px-2 py-1 bg-[#1a1825] border border-[#ff780055] text-[#ff9a3c] hover:bg-[#2a1705] transition-colors font-["Press_Start_2P"]',
+              disabled && 'opacity-50 cursor-not-allowed'
+            )}
           >
             {lbl}
           </button>
         ))}
-        {value && (
+        {value && !disabled && (
           <button
             type="button"
             onClick={() => onChange(undefined)}
