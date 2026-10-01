@@ -70,12 +70,7 @@ export const PopoverTrigger = React.forwardRef<HTMLDivElement, PopoverTriggerPro
     }
 
     return (
-      <div
-        ref={context.triggerRef}
-        onClick={handleClick}
-        className={cn('cursor-pointer', className)}
-        {...props}
-      >
+      <div ref={context.triggerRef} onClick={handleClick} className={cn('cursor-pointer', className)} {...props}>
         {children}
       </div>
     )

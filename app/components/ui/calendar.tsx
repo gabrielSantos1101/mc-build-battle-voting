@@ -1,4 +1,3 @@
-// shadcn/ui — Calendar (react-day-picker v10)
 import { ptBR } from 'date-fns/locale'
 import { ChevronLeft, ChevronRight } from 'lucide-react'
 import * as React from 'react'

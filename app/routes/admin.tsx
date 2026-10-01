@@ -3,7 +3,7 @@ import { motion } from 'framer-motion'
 import { Clock, ExternalLink, Eye, EyeOff, Image as ImageIcon, Lock, LogOut, Pencil, Plus, RefreshCw, Trash2, X } from 'lucide-react'
 import React, { useEffect, useRef, useState } from 'react'
 import { DateTimePicker } from '~/components/DateTimePicker'
-import { MinecraftButton, PlayerHead, StatusBadge } from '~/components/ui'
+import { MinecraftButton, PlayerHead, StatusBadge } from '~/components/custom'
 import type { Competitor, FrameTheme, Round, Vote } from '~/lib/supabase'
 import { computeVoteStats, formatTimeMMSS, getRemainingSeconds, supabase } from '~/lib/supabase'
 
@@ -916,7 +916,7 @@ function AdminPage() {
                       <div className="flex items-center gap-1">
                         <button
                           onClick={() => handleStartEdit(c)}
-                          className="text-pumpkin-light hover:text-[#ffcc00] p-1.5 transition-colors bg-[#1a1825] border border-[#ff780044] rounded hover:border-[#ff7800]"
+                          className="text-pumpkin-light hover:text-[#ffcc00] p-1.5 transition-colors bg-obsidian-light border border-[#ff780044] rounded hover:border-[#ff7800]"
                           title="Editar competidor"
                         >
                           <Pencil size={13} />
@@ -1136,7 +1136,7 @@ function AdminPage() {
                 </div>
 
                 <div className="text-left space-y-2">
-                  <label className="text-[8px] text-[#aaa] block mb-1.5 flex items-center gap-1">
+                  <label className="text-[8px] text-[#aaa] mb-1.5 flex items-center gap-1">
                     <Lock size={12} /> Confirmar Nova Senha
                   </label>
                   <input

@@ -3,7 +3,7 @@ import { useEffect, useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { supabase, computeVoteStats } from '~/lib/supabase'
 import type { Round, Competitor, Vote, CompetitorWithVotes, FrameTheme } from '~/lib/supabase'
-import { PlayerHead, TrophyBadge } from '~/components/ui'
+import { PlayerHead, TrophyBadge } from '~/components/custom'
 
 export const Route = createFileRoute('/overlay/cena')({
   component: OverlayCena,

@@ -1,5 +1,6 @@
 import React from 'react'
 import type { FrameTheme } from '~/lib/supabase'
+import { cn } from '~/lib/cn'
 
 interface FrameConfig {
   label: string
@@ -79,7 +80,7 @@ export function MinecraftHorrorFrame({
   return (
     <div
       onClick={onClick}
-      className={`relative select-none transition-transform duration-200 hover:-translate-y-1.5 cursor-pointer ${className}`}
+      className={cn('relative select-none transition-transform duration-200 cursor-pointer', className)}
       style={{
         filter: selected
           ? `drop-shadow(0 0 25px ${config.glowColor})`
@@ -91,7 +92,7 @@ export function MinecraftHorrorFrame({
 
         {/* Conteúdo do card na área interna (fica ATRÁS do frame) */}
         <div
-          className="absolute z-10 flex flex-col justify-between"
+          className="absolute z-10 flex flex-col justify-between p-10"
           style={{
             top: config.inset.top,
             bottom: config.inset.bottom,

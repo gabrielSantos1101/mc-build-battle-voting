@@ -5,10 +5,10 @@ import { ptBR } from 'date-fns/locale'
 import { ChevronDownIcon } from 'lucide-react'
 import * as React from 'react'
 
-import { Button } from '~/components/shadcn/button'
-import { Calendar } from '~/components/shadcn/calendar'
-import { Field, FieldGroup, FieldLabel } from '~/components/shadcn/field'
-import { Popover, PopoverContent, PopoverTrigger } from '~/components/shadcn/popover'
+import { Button } from '~/components/ui'
+import { Calendar } from '~/components/ui'
+import { Field, FieldGroup, FieldLabel } from '~/components/ui'
+import { Popover, PopoverContent, PopoverTrigger } from '~/components/ui'
 import { cn } from '~/lib/cn'
 
 interface DateTimePickerProps {

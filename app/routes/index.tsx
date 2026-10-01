@@ -3,7 +3,7 @@ import { motion } from 'framer-motion'
 import { X } from 'lucide-react'
 import { useEffect, useRef, useState } from 'react'
 import { FRAME_CONFIGS, MinecraftHorrorFrame } from '~/components/MinecraftHorrorFrame'
-import { PlayerHead, VoteBar } from '~/components/ui'
+import { PlayerHead, VoteBar } from '~/components/custom'
 import type { Competitor, CompetitorWithVotes, FrameTheme, IPInfo, Round, Vote, VotingTimeStatus } from '~/lib/supabase'
 import {
   canVote,
@@ -64,7 +64,7 @@ function CompetitorCard({
         <div className="w-full h-full flex flex-col justify-between py-1">
           {/* 1. Screenshot da Construção — clique para zoom */}
           <div
-            className="relative w-full aspect-4/3 rounded-sm overflow-hidden border-2 border-black/95 bg-black/90 shadow-md group shrink-0 cursor-zoom-in"
+            className="relative w-full aspect-video rounded-xl overflow-hidden border-2 border-black/95 bg-black/90 shadow-md group shrink-0 cursor-zoom-in"
             onClick={(e) => {
               e.stopPropagation()
               onZoom(competitor)
@@ -84,7 +84,7 @@ function CompetitorCard({
           </div>
 
           {/* 2. Nick e Skin do Jogador */}
-          <div className="flex items-center gap-2 px-1 my-0.5">
+          <div className="flex items-center gap-2 px-1 my-5">
             <div className="border border-black/80 bg-black/60 p-0.5 rounded shadow shrink-0">
               <PlayerHead nick={competitor.player_nick} size={22} />
             </div>
