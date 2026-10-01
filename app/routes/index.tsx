@@ -49,7 +49,7 @@ function CompetitorCard({
       animate={{ opacity: 1, y: 0 }}
       exit={{ opacity: 0, scale: 0.95 }}
       transition={{ duration: 0.25 }}
-      className="w-full max-w-[420px] mx-auto"
+      className="w-full max-w-[500px] mx-auto"
     >
       <MinecraftHorrorFrame
         theme={competitor.frame_theme as FrameTheme}
@@ -112,11 +112,11 @@ function CompetitorCard({
             </div>
           )}
 
-          {/* 3. Botão de Votação ou Status */}
-          <div className="w-full mt-auto">
+          {/* 3. Botão de Votação ou Status (Centralizado e Fit-Content) */}
+          <div className="w-full mt-auto flex justify-center py-0.5">
             {roundStatus === 'draft' ? (
               <div
-                className="w-full py-2 text-center text-[7px] font-['Press_Start_2P'] rounded border-2 select-none shadow-inner"
+                className="w-fit py-1.5 px-4 text-center text-[7px] font-['Press_Start_2P'] rounded border-2 select-none shadow-inner"
                 style={{
                   background: '#151320',
                   borderColor: '#3c2b18',
@@ -127,7 +127,7 @@ function CompetitorCard({
               </div>
             ) : roundStatus === 'paused' ? (
               <div
-                className="w-full py-2 text-center text-[7px] font-['Press_Start_2P'] rounded border-2 select-none shadow-inner"
+                className="w-fit py-1.5 px-4 text-center text-[7px] font-['Press_Start_2P'] rounded border-2 select-none shadow-inner"
                 style={{
                   background: '#241418',
                   borderColor: '#552222',
@@ -138,7 +138,7 @@ function CompetitorCard({
               </div>
             ) : roundStatus === 'finished' ? (
               <div
-                className="w-full py-2 text-center text-[7px] font-['Press_Start_2P'] rounded border-2 select-none shadow-inner"
+                className="w-fit py-1.5 px-4 text-center text-[7px] font-['Press_Start_2P'] rounded border-2 select-none shadow-inner"
                 style={{
                   background: isMyVote ? '#1a3320' : '#141418',
                   borderColor: isMyVote ? '#00ff88' : '#333333',
@@ -149,7 +149,7 @@ function CompetitorCard({
               </div>
             ) : hasVoted ? (
               <div
-                className="w-full py-2 text-center text-[7px] font-['Press_Start_2P'] rounded border-2 shadow-inner"
+                className="w-fit py-1.5 px-4 text-center text-[7px] font-['Press_Start_2P'] rounded border-2 shadow-inner"
                 style={{
                   background: isMyVote ? '#1a3320' : '#141418',
                   borderColor: isMyVote ? '#00ff88' : '#2a2a2a',
@@ -161,7 +161,7 @@ function CompetitorCard({
             ) : (
               <button
                 onClick={() => onVote(competitor.id)}
-                className="w-full py-2 px-2 rounded font-['Press_Start_2P'] text-[10px] tracking-wider uppercase text-white cursor-pointer active:translate-y-0.5 transition-all shadow-[0_3px_0_#803300,0_0_12px_rgba(255,120,0,0.4)]"
+                className="w-fit min-w-[140px] py-2 px-6 rounded font-['Press_Start_2P'] text-[10px] tracking-wider uppercase text-white cursor-pointer active:translate-y-0.5 transition-all shadow-[0_3px_0_#803300,0_0_12px_rgba(255,120,0,0.4)]"
                 style={{
                   background: 'linear-gradient(180deg, #ff9a3c 0%, #d85a00 100%)',
                   border: '2px solid #ffcc66',
@@ -523,7 +523,7 @@ function VotingPage() {
           </header>
 
           {/* CONTEÚDO PRINCIPAL COM SCROLL LIVRE */}
-          <main className="max-w-6xl mx-auto px-4 py-6 flex-1 w-full">
+          <main className="max-w-[1400px] mx-auto px-4 py-6 flex-1 w-full">
             {!round ? (
               <WaitingScreen status="draft" />
             ) : (
