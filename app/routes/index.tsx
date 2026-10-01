@@ -19,10 +19,10 @@ export const Route = createFileRoute('/')({
   component: VotingPage,
 })
 
-// Card do Competidor dentro do Frame Temático
 interface CompetitorCardProps {
   competitor: CompetitorWithVotes
   roundId: string
+  roundStatus: string
   hasVoted: boolean
   votedFor: string | null
   showResults: boolean
@@ -32,6 +32,7 @@ interface CompetitorCardProps {
 
 function CompetitorCard({
   competitor,
+  roundStatus,
   hasVoted,
   votedFor,
   showResults,
@@ -48,7 +49,7 @@ function CompetitorCard({
       animate={{ opacity: 1, y: 0 }}
       exit={{ opacity: 0, scale: 0.95 }}
       transition={{ duration: 0.25 }}
-      className="w-full max-w-[360px] mx-auto"
+      className="w-full max-w-[420px] mx-auto"
     >
       <MinecraftHorrorFrame
         theme={competitor.frame_theme as FrameTheme}
@@ -58,7 +59,7 @@ function CompetitorCard({
         <div className="w-full h-full flex flex-col justify-between py-1">
           {/* 1. Screenshot da Construção — clique para zoom */}
           <div
-            className="relative w-full aspect-[16/11] rounded-sm overflow-hidden border-2 border-black/95 bg-black/90 shadow-md group shrink-0 cursor-zoom-in"
+            className="relative w-full aspect-[4/3] rounded-sm overflow-hidden border-2 border-black/95 bg-black/90 shadow-md group shrink-0 cursor-zoom-in"
             onClick={(e) => {
               e.stopPropagation()
               onZoom(competitor)
@@ -93,7 +94,7 @@ function CompetitorCard({
                 {competitor.player_nick}
               </div>
             </div>
-            {showResults && (
+            {showResults && roundStatus !== 'draft' && (
               <div className="text-[7px] text-[#ff9a3c] font-['Press_Start_2P'] shrink-0">
                 {competitor.vote_count}v
               </div>
@@ -101,7 +102,7 @@ function CompetitorCard({
           </div>
 
           {/* Placar se ativo */}
-          {showResults && (
+          {showResults && roundStatus !== 'draft' && (
             <div className="mb-0.5 px-0.5">
               <VoteBar
                 percentage={competitor.vote_percentage}
@@ -111,9 +112,42 @@ function CompetitorCard({
             </div>
           )}
 
-          {/* 3. Botão VOTAR Minecraft 3D Clássico */}
+          {/* 3. Botão de Votação ou Status */}
           <div className="w-full mt-auto">
-            {hasVoted ? (
+            {roundStatus === 'draft' ? (
+              <div
+                className="w-full py-2 text-center text-[7px] font-['Press_Start_2P'] rounded border-2 select-none shadow-inner"
+                style={{
+                  background: '#151320',
+                  borderColor: '#3c2b18',
+                  color: '#ff9a3c',
+                }}
+              >
+                ⏳ AGUARDE LIBERAÇÃO
+              </div>
+            ) : roundStatus === 'paused' ? (
+              <div
+                className="w-full py-2 text-center text-[7px] font-['Press_Start_2P'] rounded border-2 select-none shadow-inner"
+                style={{
+                  background: '#241418',
+                  borderColor: '#552222',
+                  color: '#ff6666',
+                }}
+              >
+                ⏸ VOTAÇÃO PAUSADA
+              </div>
+            ) : roundStatus === 'finished' ? (
+              <div
+                className="w-full py-2 text-center text-[7px] font-['Press_Start_2P'] rounded border-2 select-none shadow-inner"
+                style={{
+                  background: isMyVote ? '#1a3320' : '#141418',
+                  borderColor: isMyVote ? '#00ff88' : '#333333',
+                  color: isMyVote ? '#00ff88' : '#777777',
+                }}
+              >
+                {isMyVote ? '✓ SEU VOTO' : '🏆 ENCERRADO'}
+              </div>
+            ) : hasVoted ? (
               <div
                 className="w-full py-2 text-center text-[7px] font-['Press_Start_2P'] rounded border-2 shadow-inner"
                 style={{
@@ -265,18 +299,31 @@ function VotingPage() {
   useEffect(() => {
     async function loadActiveRound() {
       setLoading(true)
-      const { data } = await supabase
+      // Prioriza rodada ativa ou busca a rodada mais recente (inclusive em draft para modo apresentação)
+      const { data: activeRound } = await supabase
         .from('rounds')
         .select('*')
-        .in('status', ['active', 'paused', 'finished'])
+        .eq('status', 'active')
         .order('created_at', { ascending: false })
         .limit(1)
-        .single()
+        .maybeSingle()
 
-      if (data) {
-        setRound(data)
-        setHasVoted(hasVotedInRound(data.id))
-        await Promise.all([loadCompetitors(data.id), loadVotes(data.id)])
+      let targetRound = activeRound
+
+      if (!targetRound) {
+        const { data: latestRound } = await supabase
+          .from('rounds')
+          .select('*')
+          .order('created_at', { ascending: false })
+          .limit(1)
+          .maybeSingle()
+        targetRound = latestRound
+      }
+
+      if (targetRound) {
+        setRound(targetRound)
+        setHasVoted(hasVotedInRound(targetRound.id))
+        await Promise.all([loadCompetitors(targetRound.id), loadVotes(targetRound.id)])
       } else {
         setRound(null)
       }
@@ -477,10 +524,8 @@ function VotingPage() {
 
           {/* CONTEÚDO PRINCIPAL COM SCROLL LIVRE */}
           <main className="max-w-6xl mx-auto px-4 py-6 flex-1 w-full">
-            {!round || round.status === 'draft' ? (
-              <WaitingScreen status={round?.status || 'draft'} />
-            ) : round.status !== 'active' && !hasVoted ? (
-              <WaitingScreen status={round.status} />
+            {!round ? (
+              <WaitingScreen status="draft" />
             ) : (
               <div>
                 {/* Mensagem de Erro se houver */}
@@ -490,25 +535,40 @@ function VotingPage() {
                   </div>
                 )}
 
-                {/* Subtítulo Estilizado */}
+                {/* Subtítulo Estilizado com Status Contextual */}
                 <div className="text-center mb-8 bg-black/60 py-2.5 px-4 border-2 border-[#1c1828] max-w-xl mx-auto rounded shadow-lg backdrop-blur-sm">
                   <h2 className="text-xs sm:text-sm text-[#ff9a3c] mb-1">
-                    {hasVoted ? 'SEU VOTO FOI REGISTRADO!' : 'ESCOLHA SUA CONSTRUÇÃO FAVORITA'}
+                    {round.status === 'draft'
+                      ? '👁️ MODO APRESENTAÇÃO'
+                      : round.status === 'paused'
+                      ? '⏸ VOTAÇÃO PAUSADA'
+                      : round.status === 'finished'
+                      ? '🏆 VOTAÇÃO ENCERRADA'
+                      : hasVoted
+                      ? 'SEU VOTO FOI REGISTRADO!'
+                      : 'ESCOLHA SUA CONSTRUÇÃO FAVORITA'}
                   </h2>
                   <p className="text-[8px] text-[#888] leading-relaxed">
-                    {hasVoted
+                    {round.status === 'draft'
+                      ? 'Conheça as construções dos participantes! A votação será aberta em breve na live.'
+                      : round.status === 'paused'
+                      ? 'O streamer pausou a votação temporariamente.'
+                      : round.status === 'finished'
+                      ? 'Votação finalizada. Confira o pódio na live!'
+                      : hasVoted
                       ? 'Aguarde o encerramento da rodada para ver o pódio final.'
                       : 'Clique em VOTAR abaixo da sua construção favorita.'}
                   </p>
                 </div>
 
-                {/* Grid dos Cards com as Molduras Ilustradas (Sem Bordas Extras) */}
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 justify-center">
+                {/* Grid dos Cards com as Molduras Ilustradas */}
+                <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6 justify-center">
                   {competitorsWithVotes.map((competitor) => (
                     <CompetitorCard
                       key={competitor.id}
                       competitor={competitor}
                       roundId={round.id}
+                      roundStatus={round.status}
                       hasVoted={hasVoted}
                       votedFor={votedForId}
                       showResults={round.show_live_results}
