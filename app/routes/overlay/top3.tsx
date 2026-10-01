@@ -3,8 +3,9 @@ import { useEffect, useState } from 'react'
 import { AnimatePresence, motion } from 'framer-motion'
 import { supabase, computeVoteStats } from '~/lib/supabase'
 import type { Round, Competitor, Vote, CompetitorWithVotes, FrameTheme } from '~/lib/supabase'
-import { PlayerHead, VoteBar } from '~/components/custom'
+import { VoteBar } from '~/components/custom'
 import { TrophyBadge } from '~/components/custom'
+import { PlayerSkin3D } from '~/components/PlayerSkin3D'
 
 export const Route = createFileRoute()({
   component: OverlayTop3,
@@ -23,7 +24,34 @@ interface RankedEntry {
   rank: 1 | 2 | 3
 }
 
+// Helper to fetch skin URL from Mojang
+async function fetchSkinUrl(nick: string): Promise<string | null> {
+  try {
+    const uuidRes = await fetch(`https://api.mojang.com/users/profiles/minecraft/${nick}`)
+    if (!uuidRes.ok) return null
+    const { id: uuid } = await uuidRes.json()
+    
+    const profileRes = await fetch(`https://sessionserver.mojang.com/session/minecraft/profile/${uuid}`)
+    if (!profileRes.ok) return null
+    const profile = await profileRes.json()
+    
+    const textures = JSON.parse(atob(profile.properties[0].value))
+    return textures.textures.SKIN.url
+  } catch {
+    return null
+  }
+}
+
 function Top3Widget({ entries, showResults }: { entries: RankedEntry[], showResults: boolean }) {
+  const [skinUrls, setSkinUrls] = useState<Record<string, string>>({})
+
+  useEffect(() => {
+    entries.forEach(async (entry) => {
+      const url = await fetchSkinUrl(entry.competitor.player_nick)
+      if (url) setSkinUrls(prev => ({ ...prev, [entry.competitor.player_nick]: url }))
+    })
+  }, [entries])
+
   return (
     <div
       className="flex flex-col gap-2 p-2"
@@ -53,6 +81,7 @@ function Top3Widget({ entries, showResults }: { entries: RankedEntry[], showResu
       <AnimatePresence initial={false}>
         {entries.map(({ competitor, rank }) => {
           const accent = FRAME_ACCENT[competitor.frame_theme as FrameTheme] ?? '#ff7800'
+          const skinUrl = skinUrls[competitor.player_nick]
           return (
             <motion.div
               key={competitor.id}
@@ -64,7 +93,13 @@ function Top3Widget({ entries, showResults }: { entries: RankedEntry[], showResu
               className="flex items-center gap-2"
             >
               <TrophyBadge place={rank} size="sm" />
-              <PlayerHead nick={competitor.player_nick} size={20} />
+              {skinUrl ? (
+                <div style={{ width: 36, height: 36, flexShrink: 0 }}>
+                  <PlayerSkin3D skinUrl={skinUrl} size={64} animation="wave" autoRotateSpeed={0.2} />
+                </div>
+              ) : (
+                <div style={{ width: 36, height: 36, flexShrink: 0, background: '#1a1a1a', border: '2px solid #333' }} />
+              )}
               <div className="flex-1 min-w-0">
                 <div
                   style={{
