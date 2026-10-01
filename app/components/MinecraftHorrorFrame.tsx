@@ -7,7 +7,7 @@ interface FrameConfig {
   borderColor: string
   glowColor: string
   accentColor: string
-  // Coordenadas milimétricas da janela preta central da moldura
+  // Área interna onde o conteúdo do card aparece (sob o frame)
   inset: {
     top: string
     bottom: string
@@ -19,7 +19,7 @@ interface FrameConfig {
 export const FRAME_CONFIGS: Record<FrameTheme, FrameConfig> = {
   'warden-sculk': {
     label: 'Deep Dark / Warden',
-    image: '/frames/warden-sculk.jpg',
+    image: '/frames/Warden-frame.jpg',
     borderColor: '#00c9a7',
     glowColor: 'rgba(0, 201, 167, 0.6)',
     accentColor: '#00e5ff',
@@ -27,7 +27,7 @@ export const FRAME_CONFIGS: Record<FrameTheme, FrameConfig> = {
   },
   'pale-garden': {
     label: 'Pale Garden / Creaking',
-    image: '/frames/pale-garden.jpg',
+    image: '/frames/Pale-garden-frame.jpg',
     borderColor: '#c8c8b0',
     glowColor: 'rgba(255, 140, 0, 0.6)',
     accentColor: '#ff8c00',
@@ -35,7 +35,7 @@ export const FRAME_CONFIGS: Record<FrameTheme, FrameConfig> = {
   },
   'jack-pumpkin': {
     label: 'Jack-o-Lantern & Soul Fire',
-    image: '/frames/jack-pumpkin.jpg',
+    image: '/frames/Jack-o-Lanter-frame.jpg',
     borderColor: '#ff7800',
     glowColor: 'rgba(255, 120, 0, 0.6)',
     accentColor: '#00e5ff',
@@ -43,7 +43,7 @@ export const FRAME_CONFIGS: Record<FrameTheme, FrameConfig> = {
   },
   'wither': {
     label: 'Wither Boss',
-    image: '/frames/wither.jpg',
+    image: '/frames/Wither-boss-frame.jpg',
     borderColor: '#a0a0ff',
     glowColor: 'rgba(160, 160, 255, 0.6)',
     accentColor: '#ffd700',
@@ -51,7 +51,7 @@ export const FRAME_CONFIGS: Record<FrameTheme, FrameConfig> = {
   },
   'ender-dragon': {
     label: 'Ender Dragon',
-    image: '/frames/ender-dragon.jpg',
+    image: '/frames/Ender-dragon-frame.jpg',
     borderColor: '#9d50db',
     glowColor: 'rgba(157, 80, 219, 0.6)',
     accentColor: '#d2a8ff',
@@ -86,17 +86,10 @@ export function MinecraftHorrorFrame({
           : 'drop-shadow(0 10px 25px rgba(0,0,0,0.95))',
       }}
     >
-      {/* Quadro do Card - Proporção exata da arte (sem caixas extras ao redor) */}
-      <div className="relative w-full aspect-[3/4.2] overflow-hidden rounded shadow-2xl bg-black">
-        {/* Arte Completa da Moldura Ilustrada */}
-        <img
-          src={config.image}
-          alt={config.label}
-          className="absolute inset-0 w-full h-full object-cover pointer-events-none select-none"
-          style={{ imageRendering: 'pixelated' }}
-        />
+      {/* Container com proporção do card */}
+      <div className="relative w-full aspect-[3/4.2]">
 
-        {/* Janela Central Segura - Encaixa o conteúdo exatamente na área preta */}
+        {/* Conteúdo do card na área interna (fica ATRÁS do frame) */}
         <div
           className="absolute z-10 flex flex-col justify-between"
           style={{
@@ -108,6 +101,15 @@ export function MinecraftHorrorFrame({
         >
           {children}
         </div>
+
+        {/* Frame ilustrado por CIMA do conteúdo (z-20) — quando o verde for removido
+            o centro ficará transparente e o conteúdo aparece através dele */}
+        <img
+          src={config.image}
+          alt={config.label}
+          className="absolute inset-0 w-full h-full object-cover pointer-events-none select-none z-20"
+          style={{ imageRendering: 'pixelated' }}
+        />
       </div>
     </div>
   )
