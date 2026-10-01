@@ -66,6 +66,17 @@ export function PlayerSkin3D({
           backgroundAlpha: 0,
           backgroundColor: 0x000000
         }}
+        onReady={(viewer) => {
+          // Enable wave animation
+          try {
+            const anim = viewer.createAnimation('wave')
+            viewer.animations.add(anim)
+            viewer.animations.play('wave')
+            console.log('[PlayerSkin3D] Wave animation started')
+          } catch (e) {
+            console.warn('[PlayerSkin3D] Animation error:', e)
+          }
+        }}
       />
     </div>
   )
