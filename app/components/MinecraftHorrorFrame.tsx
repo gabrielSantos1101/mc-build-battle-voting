@@ -6,11 +6,12 @@ interface FrameConfig {
   image: string
   borderColor: string
   glowColor: string
-  inset: {
+  accentColor: string
+  // Margens de projeção para fora do card (top, bottom, sides)
+  outset: {
     top: string
     bottom: string
-    left: string
-    right: string
+    x: string
   }
 }
 
@@ -19,36 +20,41 @@ export const FRAME_CONFIGS: Record<FrameTheme, FrameConfig> = {
     label: 'Deep Dark / Warden',
     image: '/frames/warden-sculk-cropped.png',
     borderColor: '#00c9a7',
-    glowColor: 'rgba(0, 201, 167, 0.6)',
-    inset: { top: '15%', bottom: '12%', left: '13%', right: '13%' },
+    glowColor: 'rgba(0, 201, 167, 0.4)',
+    accentColor: '#00e5ff',
+    outset: { top: '-24px', bottom: '-20px', x: '-16px' },
   },
   'pale-garden': {
     label: 'Pale Garden / Creaking',
-    image: '/frames/pale-garden-cropped.png',
-    borderColor: '#c8c8b0',
-    glowColor: 'rgba(255, 140, 0, 0.6)',
-    inset: { top: '14%', bottom: '12%', left: '14%', right: '14%' },
+    image: '/frames/pale-garden.jpg',
+    borderColor: '#8c8c79',
+    glowColor: 'rgba(255, 140, 0, 0.4)',
+    accentColor: '#ff8c00',
+    outset: { top: '-20px', bottom: '-20px', x: '-18px' },
   },
   'jack-pumpkin': {
     label: 'Jack-o-Lantern & Soul Fire',
-    image: '/frames/jack-pumpkin-cropped.png',
+    image: '/frames/jack-pumpkin.jpg',
     borderColor: '#ff7800',
-    glowColor: 'rgba(255, 120, 0, 0.6)',
-    inset: { top: '15%', bottom: '12%', left: '13%', right: '13%' },
+    glowColor: 'rgba(255, 120, 0, 0.4)',
+    accentColor: '#00e5ff',
+    outset: { top: '-24px', bottom: '-20px', x: '-18px' },
   },
   'wither': {
     label: 'Wither Boss',
-    image: '/frames/wither-cropped.png',
-    borderColor: '#a0a0ff',
-    glowColor: 'rgba(160, 160, 255, 0.6)',
-    inset: { top: '15%', bottom: '14%', left: '13%', right: '13%' },
+    image: '/frames/wither.jpg',
+    borderColor: '#555555',
+    glowColor: 'rgba(160, 160, 255, 0.4)',
+    accentColor: '#ffd700',
+    outset: { top: '-24px', bottom: '-22px', x: '-16px' },
   },
   'ender-dragon': {
     label: 'Ender Dragon',
-    image: '/frames/ender-dragon-cropped.png',
-    borderColor: '#9d50db',
-    glowColor: 'rgba(157, 80, 219, 0.6)',
-    inset: { top: '16%', bottom: '14%', left: '13%', right: '13%' },
+    image: '/frames/ender-dragon.jpg',
+    borderColor: '#7928ca',
+    glowColor: 'rgba(157, 80, 219, 0.4)',
+    accentColor: '#d2a8ff',
+    outset: { top: '-26px', bottom: '-22px', x: '-16px' },
   },
 }
 
@@ -72,35 +78,45 @@ export function MinecraftHorrorFrame({
   return (
     <div
       onClick={onClick}
-      className={`relative select-none transition-transform duration-200 hover:-translate-y-1.5 cursor-pointer ${className}`}
+      className={`relative select-none transition-transform duration-200 hover:-translate-y-1.5 cursor-pointer my-4 ${className}`}
       style={{
         filter: selected
           ? `drop-shadow(0 0 25px ${config.glowColor})`
-          : 'drop-shadow(0 10px 25px rgba(0,0,0,0.95))',
+          : 'drop-shadow(0 8px 20px rgba(0,0,0,0.85))',
       }}
     >
-      {/* Container Exato do Card - sem respiro cinza ao redor */}
-      <div className="relative w-full aspect-[3/4.2] overflow-hidden rounded bg-transparent">
-        {/* Moldura Ilustrada Croppada Preenchendo Exatamente */}
+      {/* 1. CORPO INTERNO DO CARD - Contém 100% do conteúdo com segurança */}
+      <div
+        className="relative w-full rounded-sm p-3.5 flex flex-col justify-between z-10"
+        style={{
+          background: 'linear-gradient(180deg, #0f0d1a 0%, #08070d 100%)',
+          border: `3px solid ${config.borderColor}`,
+          boxShadow: 'inset 0 0 20px rgba(0,0,0,0.95), 0 4px 15px rgba(0,0,0,0.8)',
+        }}
+      >
+        {children}
+      </div>
+
+      {/* 2. MOLDURA PROJETADA PARA FORA (OVERLAY) - Fica por cima e expande para além do card */}
+      <div
+        className="absolute pointer-events-none select-none z-20"
+        style={{
+          top: config.outset.top,
+          bottom: config.outset.bottom,
+          left: config.outset.x,
+          right: config.outset.x,
+        }}
+      >
         <img
           src={config.image}
           alt={config.label}
-          className="absolute inset-0 w-full h-full object-fill pointer-events-none select-none"
-          style={{ imageRendering: 'pixelated' }}
-        />
-
-        {/* Janela Interna de Conteúdo */}
-        <div
-          className="absolute z-10 flex flex-col justify-between"
+          className="w-full h-full object-fill pointer-events-none"
           style={{
-            top: config.inset.top,
-            bottom: config.inset.bottom,
-            left: config.inset.left,
-            right: config.inset.right,
+            imageRendering: 'pixelated',
+            // Suave máscara central para que o conteúdo interno brilhe com clareza
+            filter: 'contrast(1.05)',
           }}
-        >
-          {children}
-        </div>
+        />
       </div>
     </div>
   )

@@ -40,16 +40,16 @@ function CompetitorCard({
       animate={{ opacity: 1, y: 0 }}
       exit={{ opacity: 0, scale: 0.95 }}
       transition={{ duration: 0.25 }}
-      className="w-full max-w-[310px] mx-auto"
+      className="w-full max-w-[300px] mx-auto"
     >
       <MinecraftHorrorFrame
         theme={competitor.frame_theme as FrameTheme}
         selected={isMyVote}
       >
-        {/* Janela Interna Exata */}
-        <div className="w-full h-full flex flex-col justify-between py-0.5">
-          {/* 1. Screenshot da Construção (com moldura interna pixel-art) */}
-          <div className="relative w-full aspect-[16/11] rounded-sm overflow-hidden border-2 border-black/95 bg-black/90 shadow-md group shrink-0">
+        {/* CONTEÚDO DO CARD: Totalmente protegido e contido no container */}
+        <div className="flex flex-col gap-3">
+          {/* 1. Screenshot da Construção com Borda e Botão de Zoom */}
+          <div className="relative w-full aspect-[16/10] rounded overflow-hidden border-2 border-black/90 bg-black/80 shadow-md group shrink-0">
             <img
               src={competitor.image_url}
               alt={`${competitor.player_nick}'s build`}
@@ -62,23 +62,23 @@ function CompetitorCard({
                 e.stopPropagation()
                 onZoom(competitor)
               }}
-              className="absolute top-1 right-1 p-1 bg-black/85 text-white rounded border border-white/40 opacity-0 group-hover:opacity-100 transition-opacity hover:bg-black"
+              className="absolute top-1.5 right-1.5 p-1 bg-black/80 text-white rounded border border-white/30 opacity-0 group-hover:opacity-100 transition-opacity hover:bg-black"
               title="Ver em tela cheia"
             >
               <ZoomIn size={12} />
             </button>
 
             {isMyVote && (
-              <div className="absolute top-1 left-1 bg-[#00ff88] text-black px-1.5 py-0.5 text-[6px] font-bold tracking-wider rounded border border-black shadow">
+              <div className="absolute top-1.5 left-1.5 bg-[#00ff88] text-black px-1.5 py-0.5 text-[6px] font-bold tracking-wider rounded border border-black shadow">
                 ✓ SEU VOTO
               </div>
             )}
           </div>
 
-          {/* 2. Nick e Skin do Jogador (Igual ao mockup de referência) */}
-          <div className="flex items-center gap-2 px-1 my-0.5">
+          {/* 2. Informações do Jogador (Skin + Nick) */}
+          <div className="flex items-center gap-2 px-1 py-1 bg-black/40 border border-white/10 rounded">
             <div className="border border-black/80 bg-black/60 p-0.5 rounded shadow shrink-0">
-              <PlayerHead nick={competitor.player_nick} size={22} />
+              <PlayerHead nick={competitor.player_nick} size={24} />
             </div>
             <div className="flex-1 min-w-0">
               <div
@@ -98,9 +98,9 @@ function CompetitorCard({
             )}
           </div>
 
-          {/* Placar se ativo */}
+          {/* 3. Placar se ativo */}
           {showResults && (
-            <div className="mb-0.5 px-0.5">
+            <div className="px-0.5">
               <VoteBar
                 percentage={competitor.vote_percentage}
                 count={competitor.vote_count}
@@ -109,11 +109,11 @@ function CompetitorCard({
             </div>
           )}
 
-          {/* 3. Botão VOTAR Minecraft 3D Clássico (Laranja com relevo) */}
-          <div className="w-full mt-auto">
+          {/* 4. Botão VOTAR Minecraft 3D Clássico */}
+          <div className="w-full">
             {hasVoted ? (
               <div
-                className="w-full py-2 text-center text-[7px] font-['Press_Start_2P'] rounded border-2 shadow-inner"
+                className="w-full py-2.5 text-center text-[8px] font-['Press_Start_2P'] rounded border-2 shadow-inner"
                 style={{
                   background: isMyVote ? '#1a3320' : '#141418',
                   borderColor: isMyVote ? '#00ff88' : '#2a2a2a',
@@ -125,7 +125,7 @@ function CompetitorCard({
             ) : (
               <button
                 onClick={() => onVote(competitor.id)}
-                className="w-full py-2 px-2 rounded font-['Press_Start_2P'] text-[10px] tracking-wider uppercase text-white cursor-pointer active:translate-y-0.5 transition-all shadow-[0_3px_0_#803300,0_0_12px_rgba(255,120,0,0.4)]"
+                className="w-full py-2.5 px-3 rounded font-['Press_Start_2P'] text-[10px] tracking-wider uppercase text-white cursor-pointer active:translate-y-0.5 transition-all shadow-[0_3px_0_#803300,0_0_12px_rgba(255,120,0,0.4)]"
                 style={{
                   background: 'linear-gradient(180deg, #ff9a3c 0%, #d85a00 100%)',
                   border: '2px solid #ffcc66',
@@ -373,8 +373,7 @@ function VotingPage() {
         <div className="flex-1 flex flex-col min-w-0">
           {/* HEADER COM A TEXTURA REAL DO MOCKUP DE MINECRAFT */}
           <header className="w-full relative z-20 shadow-2xl">
-            {/* Se houver a imagem recortada do header do conceito, renderiza com fidelidade absoluta */}
-            <div className="max-w-5xl mx-auto px-2 pt-3 pb-1">
+            <div className="max-w-5xl mx-auto px-2 pt-4 pb-2">
               <div className="relative w-full rounded overflow-hidden shadow-2xl border-4 border-[#2b1604]">
                 <img
                   src="/textures/concept-header.png"
@@ -382,7 +381,6 @@ function VotingPage() {
                   className="w-full h-auto object-cover select-none pointer-events-none"
                   style={{ imageRendering: 'pixelated' }}
                   onError={(e) => {
-                    // Fallback para CSS caso falhe o load da imagem
                     e.currentTarget.style.display = 'none'
                   }}
                 />
@@ -411,8 +409,20 @@ function VotingPage() {
                   </div>
                 )}
 
-                {/* Grid dos Cards com as Molduras Ilustradas (Sem Bordas Extras) */}
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 justify-center mt-4">
+                {/* Subtítulo Estilizado */}
+                <div className="text-center mb-10 bg-black/60 py-3 px-4 border-2 border-[#1c1828] max-w-xl mx-auto rounded shadow-lg backdrop-blur-sm">
+                  <h2 className="text-xs sm:text-sm text-[#ff9a3c] mb-1">
+                    {hasVoted ? 'SEU VOTO FOI REGISTRADO!' : 'ESCOLHA SUA CONSTRUÇÃO FAVORITA'}
+                  </h2>
+                  <p className="text-[8px] text-[#888] leading-relaxed">
+                    {hasVoted
+                      ? 'Aguarde o encerramento da rodada para ver o pódio final.'
+                      : 'Clique em VOTAR abaixo da sua construção favorita.'}
+                  </p>
+                </div>
+
+                {/* Grid dos Cards com as Molduras Projetadas para Fora */}
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-12 justify-center mt-4">
                   {competitorsWithVotes.map((competitor) => (
                     <CompetitorCard
                       key={competitor.id}
