@@ -6,6 +6,7 @@ import { supabase, computeVoteStats, getRemainingSeconds, formatTimeMMSS } from 
 import type { Round, Competitor, Vote, FrameTheme } from '~/lib/supabase'
 import { MinecraftHorrorFrame, FRAME_CONFIGS } from '~/components/MinecraftHorrorFrame'
 import { MinecraftButton, PlayerHead, StatusBadge } from '~/components/ui'
+import { DateTimePicker } from '~/components/DateTimePicker'
 
 export const Route = createFileRoute('/admin')({
   component: AdminPage,
@@ -34,7 +35,7 @@ function AdminPage() {
 
   // Form states
   const [newRoundTitle, setNewRoundTitle] = useState('')
-  const [roundDurationMinutes, setRoundDurationMinutes] = useState('5')
+  const [endsAtDate, setEndsAtDate] = useState<Date | undefined>(undefined)
   const [playerNick, setPlayerNick] = useState('')
   const [selectedTheme, setSelectedTheme] = useState<FrameTheme>('jack-pumpkin')
   const [imageFile, setImageFile] = useState<File | null>(null)
@@ -164,14 +165,14 @@ function AdminPage() {
     }
   }
 
-  // Change round status with exact timestamp calculation
+  // Change round status with exact timestamp from the date picker
   async function updateRoundStatus(status: 'draft' | 'active' | 'paused' | 'finished') {
     if (!currentRound) return
 
     let endsAt: string | null = currentRound.ends_at
     if (status === 'active') {
-      const minutes = parseInt(roundDurationMinutes, 10) || 5
-      endsAt = new Date(Date.now() + minutes * 60 * 1000).toISOString()
+      // Usa o timestamp exato escolhido no DateTimePicker
+      endsAt = endsAtDate ? endsAtDate.toISOString() : null
     } else if (status === 'finished' || status === 'draft') {
       endsAt = null
     }
@@ -428,20 +429,14 @@ function AdminPage() {
                 <StatusBadge status={currentRound.status} />
               </div>
 
-              {/* Timer Config */}
+              {/* Timer Config — DateTimePicker exato */}
               <div className="mb-3 p-2.5 bg-[#14121d] border border-[#333]">
-                <label className="text-[7px] text-[#aaa] block mb-1">DURAÇÃO DA VOTAÇÃO (MINUTOS):</label>
-                <div className="flex items-center gap-2">
-                  <input
-                    type="number"
-                    min="1"
-                    max="60"
-                    value={roundDurationMinutes}
-                    onChange={(e) => setRoundDurationMinutes(e.target.value)}
-                    className="w-20 text-[9px] p-1.5 bg-[#1a1825] border border-[#555] text-[#ffaa00] text-center font-['Press_Start_2P']"
-                  />
-                  <span className="text-[8px] text-[#888]">minutos</span>
-                </div>
+                <DateTimePicker
+                  value={endsAtDate}
+                  onChange={setEndsAtDate}
+                  label="ENCERRAMENTO DA VOTAÇÃO:"
+                  minDate={new Date()}
+                />
                 {currentRound.ends_at && currentRound.status === 'active' && (
                   <div className="mt-2 text-[8px] text-[#00ff88] flex items-center gap-1.5">
                     <Clock size={12} className="animate-pulse" />
