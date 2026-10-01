@@ -1,62 +1,114 @@
-# 🎃 Minecraft Build Battle: Halloween Edition - Sistema de Votação para Live
+# Minecraft Build Battle Vote
 
-Sistema completo de votação em tempo real para competições de construção no Minecraft, desenhado com estética temática **Minecraft x Halloween & Horror** (Warden/Sculk, Pale Garden/Creaking, Wither, Ender Dragon e Jack-o'-Lantern).
+Sistema de votação para Build Battle de Minecraft com anti-fraude por IP/device e agendamento de votação.
 
----
+## Funcionalidades
 
-## 🚀 Como Rodar o Projeto
+### Votação Pública (`/`)
+- **Anti-fraude duplo**: 1 voto por device_id + 1 voto por IP por rodada
+- **Detecção de IP client-side**: APIs gratuitas (ipify, ipapi.co, ipwho.is) com geo (país/região/cidade)
+- **JWT stateless**: Token no localStorage, sem dependência de session/server state
+- **Timer regressivo preciso**: Baseado em timestamp `ends_at` do banco (zero drift)
+- **Estados de votação**:
+  - `not_started` - Mostra contagem regressiva para início
+  - `active` - Timer regressivo para término + botões de voto
+  - `ended` - Status "Encerrada", sem votação
+- **Interface temática Minecraft** com molduras ilustradas (Jack-o-Lantern, Warden, Pale Garden, Wither, Ender Dragon)
+- **Zoom nas construções** ao clicar na imagem
+- **Resultados ao vivo** (opcional, controlado pelo admin)
 
-1. **Instalar dependências (caso não tenha instalado):**
-   ```bash
-   npm install
-   ```
+### Painel Admin (`/admin`)
+- **Supabase Auth nativo**: Email/password, JWT seguro, refresh token automático
+- **Credenciais padrão**: `admin@email.com` / `GiodLgQjH7w` (altere no primeiro login)
+- **Botão "Alterar Senha"** no header
+- **Gerenciamento de rodadas**:
+  - Criar rodadas com título
+  - Definir `starts_at` (início da votação) e `ends_at` (fim da votação)
+  - Status: draft → active → paused/finished
+  - Toggle "Placar ao vivo" / "Modo Suspense"
+  - Zerar votos
+- **Gerenciamento de competidores**:
+  - Adicionar com nick (skin automática via mc-heads.net), tema, imagem (upload Supabase Storage ou URL)
+  - Editar/remover competidores
+- **Links rápidos** para overlays OBS (Top 3, Cena Pódio)
 
-2. **Iniciar o Servidor de Desenvolvimento:**
-   ```bash
-   npm run dev
-   ```
-   O site estará rodando em `http://localhost:3000`.
+### Overlays OBS
+- `/overlay/top3` - Pódio top 3 para stream
+- `/overlay/cena` - Cena completa do pódio
 
-3. **Gerar Build de Produção (para deploy na Vercel / Netlify):**
-   ```bash
-   npm run build
-   ```
+## Stack
+- **React 19** + **TypeScript**
+- **TanStack Router** (file-based routing)
+- **Vite** + **Tailwind CSS**
+- **Framer Motion** (animações)
+- **Supabase** (Postgres + Auth + Storage + Realtime)
+- **Lucide React** (ícones)
 
----
+## Setup
 
-## 🌐 Rotas da Aplicação
+### 1. Variáveis de ambiente
+```env
+VITE_SUPABASE_URL=https://seu-projeto.supabase.co
+VITE_SUPABASE_ANON_KEY=sua-anon-key
+```
 
-| Rota | Descrição | Uso |
-| :--- | :--- | :--- |
-| `/` | **Página de Votação Pública** | Mobile-First com QR Code na live. O chat vota (1 voto por dispositivo), visualiza skins e fotos em zoom. |
-| `/overlay/top3` | **Overlay Top 3 (OBS)** | Widget com fundo 100% transparente para colocar no cantinho da transmissão com ranking e barras animadas ao vivo. |
-| `/overlay/cena` | **Cena OBS (Pódio 1920x1080)** | Cena completa com revelação cinematográfica, partículas de fogo e pódio dos campeões. |
-| `/admin` | **Painel do Streamer** | Protegido por PIN (padrão `1234`). Cadastra participantes com foto e nick, abre/pausa votação e reseta rodadas. |
+### 2. Banco de dados (Supabase SQL Editor)
+Execute `supabase/schema.sql` - cria:
+- Tabelas: `rounds`, `competitors`, `votes`
+- Constraints únicas: `(round_id, device_id)` e `(round_id, ip)`
+- Colunas de IP/geo: `ip`, `country`, `region`, `city`
+- Timestamps: `starts_at`, `ends_at`
+- RLS policies (acesso público via anon key)
+- Storage bucket `builds` (público)
+- Realtime habilitado nas 3 tabelas
 
----
+### 3. Usuário Admin
+No Dashboard Supabase: **Authentication → Users → Add user**
+- Email: `admin@email.com`
+- Password: `GiodLgQjH7w`
+- Auto confirm: ✓
 
-## 🗄️ Como Configurar o Supabase
+### 4. Desenvolvimento
+```bash
+pnpm install
+pnpm dev
+```
 
-1. Crie um projeto gratuito em [supabase.com](https://supabase.com).
-2. Vá no **SQL Editor** do Supabase e execute o conteúdo do arquivo [`supabase/schema.sql`](./supabase/schema.sql).
-3. No arquivo `.env` (ou `.env.local`), preencha com as credenciais do seu projeto:
-   ```env
-   VITE_SUPABASE_URL=https://seu-projeto.supabase.co
-   VITE_SUPABASE_ANON_KEY=sua-anon-key-aqui
-   VITE_ADMIN_PIN=1234
-   ```
+### 5. Build
+```bash
+pnpm build
+```
 
----
+## Estrutura do Projeto
+```
+app/
+├── lib/supabase.ts          # Cliente Supabase + helpers (JWT, IP, voting logic)
+├── routes/
+│   ├── index.tsx            # Página de votação pública
+│   ├── admin.tsx            # Painel admin
+│   ├── overlay/top3.tsx     # Overlay OBS Top 3
+│   └── overlay/cena.tsx     # Overlay OBS Cena Pódio
+├── components/
+│   ├── MinecraftHorrorFrame.tsx  # Molduras temáticas
+│   ├── ui.tsx                      # Componentes UI (Button, PlayerHead, VoteBar)
+│   ├── shadcn/                     # Componentes shadcn/ui adaptados
+│   └── DateTimePicker.tsx          # Seletor data/hora para admin
+└── styles.css             # Estilos globais + fontes Press Start 2P
+supabase/
+└── schema.sql             # Schema completo do banco
+```
 
-## 🎬 Como Adicionar no OBS Studio
+## Fluxo de Votação
 
-### 1. Widget Top 3 no cantinho da Live:
-* No OBS, adicione uma nova fonte: **Navegador (Browser Source)**.
-* **URL:** `http://localhost:3000/overlay/top3` (ou a URL do seu site publicado).
-* **Largura (Width):** `350` | **Altura (Height):** `400`.
-* Marque a opção: *"Desativar quando não estiver visível"*.
+1. **Admin cria rodada** → define `starts_at` e `ends_at`
+2. **Antes de `starts_at`**: Público vê competidores + "Inicia em Xh Ym Zs" (sem botão votar)
+3. **Entre `starts_at` e `ends_at`**: Votação aberta → timer "Termina em HH:MM:SS" + botões ativos
+4. **Após `ends_at`**: Status "Encerrada" → sem votação, resultados finais
+5. **Anti-fraude**: Device_id (localStorage) + IP (API) → constraints únicas no banco garantem integridade
 
-### 2. Cena Cheia de Pódio e Revelação:
-* No OBS, crie uma cena e adicione uma fonte **Navegador (Browser Source)**.
-* **URL:** `http://localhost:3000/overlay/cena`.
-* **Largura (Width):** `1920` | **Altura (Height):** `1080`.
+## Deploy
+- **Vercel/Netlify**: Conecte o repo, adicione env vars, deploy automático
+- **Supabase**: Já configurado via Dashboard
+
+## Licença
+MIT
