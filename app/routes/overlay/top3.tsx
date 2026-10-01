@@ -94,11 +94,33 @@ function Top3Widget({ entries, showResults }: { entries: RankedEntry[], showResu
             >
               <TrophyBadge place={rank} size="sm" />
               {skinUrl ? (
-                <div style={{ width: 36, height: 36, flexShrink: 0 }}>
-                  <PlayerSkin3D skinUrl={skinUrl} size={64} animation="wave" autoRotateSpeed={0.2} />
+                <div style={{ width: 60, height: 60, flexShrink: 0, position: 'relative' }}>
+                  <div style={{ 
+                    width: '100%', 
+                    height: '100%', 
+                    background: '#0a0a0a', 
+                    border: `2px solid ${accent}`,
+                    borderRadius: '4px',
+                    overflow: 'hidden',
+                    boxShadow: `0 0 12px ${accent}66, inset 0 0 8px ${accent}33`
+                  }}>
+                    <PlayerSkin3D skinUrl={skinUrl} size={128} animation="wave" autoRotateSpeed={0.15} />
+                  </div>
                 </div>
               ) : (
-                <div style={{ width: 36, height: 36, flexShrink: 0, background: '#1a1a1a', border: '2px solid #333' }} />
+                <div style={{ 
+                  width: 60, 
+                  height: 60, 
+                  flexShrink: 0, 
+                  background: '#1a1a1a', 
+                  border: `2px solid ${accent}66`,
+                  borderRadius: '4px',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center'
+                }}>
+                  <span style={{ fontSize: '10px', color: '#444' }}>?</span>
+                </div>
               )}
               <div className="flex-1 min-w-0">
                 <div
