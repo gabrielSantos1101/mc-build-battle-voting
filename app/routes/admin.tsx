@@ -1,8 +1,8 @@
 import { createFileRoute } from '@tanstack/react-router'
 import React, { useState, useEffect, useRef } from 'react'
 import { motion } from 'framer-motion'
-import { Plus, Trash2, RefreshCw, Eye, EyeOff, Play, Pause, CheckCircle2, Lock, ExternalLink, Image as ImageIcon } from 'lucide-react'
-import { supabase, computeVoteStats } from '~/lib/supabase'
+import { Plus, Trash2, RefreshCw, Eye, EyeOff, Lock, ExternalLink, Image as ImageIcon, Clock } from 'lucide-react'
+import { supabase, computeVoteStats, getRemainingSeconds, formatTimeMMSS } from '~/lib/supabase'
 import type { Round, Competitor, Vote, FrameTheme } from '~/lib/supabase'
 import { MinecraftHorrorFrame, FRAME_CONFIGS } from '~/components/MinecraftHorrorFrame'
 import { MinecraftButton, PlayerHead, StatusBadge } from '~/components/ui'
@@ -34,6 +34,7 @@ function AdminPage() {
 
   // Form states
   const [newRoundTitle, setNewRoundTitle] = useState('')
+  const [roundDurationMinutes, setRoundDurationMinutes] = useState('5')
   const [playerNick, setPlayerNick] = useState('')
   const [selectedTheme, setSelectedTheme] = useState<FrameTheme>('jack-pumpkin')
   const [imageFile, setImageFile] = useState<File | null>(null)
@@ -41,8 +42,21 @@ function AdminPage() {
   const [imagePreview, setImagePreview] = useState<string | null>(null)
   const [uploading, setUploading] = useState(false)
   const [formError, setFormError] = useState<string | null>(null)
+  const [remainingTime, setRemainingTime] = useState<number>(0)
 
   const fileInputRef = useRef<HTMLInputElement>(null)
+
+  // Timer updater
+  useEffect(() => {
+    if (!currentRound?.ends_at) {
+      setRemainingTime(0)
+      return
+    }
+    const tick = () => setRemainingTime(getRemainingSeconds(currentRound.ends_at))
+    tick()
+    const interval = setInterval(tick, 1000)
+    return () => clearInterval(interval)
+  }, [currentRound?.ends_at])
 
   // Load rounds on auth
   useEffect(() => {
@@ -60,7 +74,6 @@ function AdminPage() {
 
     if (data && data.length > 0) {
       setRounds(data)
-      // Default to the first active or latest round
       const active = data.find((r) => r.status === 'active') || data[0]
       selectRound(active)
     } else {
@@ -109,6 +122,9 @@ function AdminPage() {
       .on('postgres_changes', { event: '*', schema: 'public', table: 'competitors', filter: `round_id=eq.${currentRound.id}` }, () => {
         loadCompetitors(currentRound.id)
       })
+      .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'rounds', filter: `id=eq.${currentRound.id}` }, (payload) => {
+        setCurrentRound(payload.new as Round)
+      })
       .subscribe()
 
     return () => { supabase.removeChannel(channel) }
@@ -136,6 +152,7 @@ function AdminPage() {
         title: newRoundTitle.trim(),
         status: 'draft',
         show_live_results: true,
+        ends_at: null,
       })
       .select()
       .single()
@@ -147,17 +164,27 @@ function AdminPage() {
     }
   }
 
-  // Change round status
+  // Change round status with exact timestamp calculation
   async function updateRoundStatus(status: 'draft' | 'active' | 'paused' | 'finished') {
     if (!currentRound) return
+
+    let endsAt: string | null = currentRound.ends_at
+    if (status === 'active') {
+      const minutes = parseInt(roundDurationMinutes, 10) || 5
+      endsAt = new Date(Date.now() + minutes * 60 * 1000).toISOString()
+    } else if (status === 'finished' || status === 'draft') {
+      endsAt = null
+    }
+
     const { error } = await supabase
       .from('rounds')
-      .update({ status })
+      .update({ status, ends_at: endsAt })
       .eq('id', currentRound.id)
 
     if (!error) {
-      setCurrentRound({ ...currentRound, status })
-      setRounds((prev) => prev.map((r) => (r.id === currentRound.id ? { ...r, status } : r)))
+      const updated = { ...currentRound, status, ends_at: endsAt }
+      setCurrentRound(updated)
+      setRounds((prev) => prev.map((r) => (r.id === currentRound.id ? updated : r)))
     }
   }
 
@@ -210,7 +237,6 @@ function AdminPage() {
 
     let finalImageUrl = imageUrlInput.trim()
 
-    // Upload to Supabase storage if file is present
     if (imageFile) {
       const ext = imageFile.name.split('.').pop() || 'png'
       const fileName = `${currentRound.id}/${Date.now()}_${playerNick.trim()}.${ext}`
@@ -220,12 +246,10 @@ function AdminPage() {
         .upload(fileName, imageFile, { upsert: true })
 
       if (uploadErr) {
-        // Fallback: If storage bucket isn't setup yet, use base64 preview or alert
-        console.warn('Storage upload error, using direct preview:', uploadErr)
         if (imagePreview) {
           finalImageUrl = imagePreview
         } else {
-          setFormError('Erro ao subir imagem para o Storage. Verifique a URL do Supabase.')
+          setFormError('Erro ao subir imagem para o Storage.')
           setUploading(false)
           return
         }
@@ -251,7 +275,7 @@ function AdminPage() {
     })
 
     if (error) {
-      setFormError('Erro ao cadastrar competidor: ' + error.message)
+      setFormError('Erro ao cadastrar: ' + error.message)
     } else {
       setPlayerNick('')
       setImageFile(null)
@@ -309,7 +333,6 @@ function AdminPage() {
   }
 
   const competitorsWithVotes = computeVoteStats(competitors, votes)
-  const origin = typeof window !== 'undefined' ? window.location.origin : ''
 
   return (
     <div className="min-h-screen bg-[#0a0912] text-[#e0e0e0] font-['Press_Start_2P'] p-4 md:p-6 pb-24">
@@ -403,6 +426,28 @@ function AdminPage() {
               <div className="flex items-center justify-between mb-3">
                 <h2 className="text-xs text-[#ff7800] truncate">{currentRound.title}</h2>
                 <StatusBadge status={currentRound.status} />
+              </div>
+
+              {/* Timer Config */}
+              <div className="mb-3 p-2.5 bg-[#14121d] border border-[#333]">
+                <label className="text-[7px] text-[#aaa] block mb-1">DURAÇÃO DA VOTAÇÃO (MINUTOS):</label>
+                <div className="flex items-center gap-2">
+                  <input
+                    type="number"
+                    min="1"
+                    max="60"
+                    value={roundDurationMinutes}
+                    onChange={(e) => setRoundDurationMinutes(e.target.value)}
+                    className="w-20 text-[9px] p-1.5 bg-[#1a1825] border border-[#555] text-[#ffaa00] text-center font-['Press_Start_2P']"
+                  />
+                  <span className="text-[8px] text-[#888]">minutos</span>
+                </div>
+                {currentRound.ends_at && currentRound.status === 'active' && (
+                  <div className="mt-2 text-[8px] text-[#00ff88] flex items-center gap-1.5">
+                    <Clock size={12} className="animate-pulse" />
+                    <span>Resta: {formatTimeMMSS(remainingTime)}</span>
+                  </div>
+                )}
               </div>
 
               <div className="space-y-2 pt-2 border-t border-[#333]">

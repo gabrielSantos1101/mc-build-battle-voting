@@ -24,6 +24,7 @@ export interface Round {
   status: RoundStatus
   show_live_results: boolean
   countdown_seconds: number | null
+  ends_at: string | null // Timestamp exato de término baseado na hora real
   created_at: string
 }
 
@@ -109,4 +110,19 @@ export function computeVoteStats(
       vote_percentage: totalVotes > 0 ? Math.round((count / totalVotes) * 100) : 0,
     }
   }).sort((a, b) => b.vote_count - a.vote_count)
+}
+
+/** Format remaining time from an exact target ISO timestamp (ends_at) */
+export function getRemainingSeconds(endsAt: string | null): number {
+  if (!endsAt) return 0
+  const target = new Date(endsAt).getTime()
+  const now = Date.now()
+  const diffMs = target - now
+  return Math.max(0, Math.floor(diffMs / 1000))
+}
+
+export function formatTimeMMSS(seconds: number): string {
+  const mins = Math.floor(seconds / 60)
+  const secs = seconds % 60
+  return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`
 }
