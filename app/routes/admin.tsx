@@ -1,7 +1,7 @@
 import { createFileRoute } from '@tanstack/react-router'
 import React, { useState, useEffect, useRef } from 'react'
 import { motion } from 'framer-motion'
-import { Plus, Trash2, RefreshCw, Eye, EyeOff, Lock, ExternalLink, Image as ImageIcon, Clock } from 'lucide-react'
+import { Plus, Trash2, RefreshCw, Eye, EyeOff, Lock, ExternalLink, Image as ImageIcon, Clock, Pencil, X } from 'lucide-react'
 import { supabase, computeVoteStats, getRemainingSeconds, formatTimeMMSS } from '~/lib/supabase'
 import type { Round, Competitor, Vote, FrameTheme } from '~/lib/supabase'
 import { MinecraftHorrorFrame, FRAME_CONFIGS } from '~/components/MinecraftHorrorFrame'
@@ -33,7 +33,7 @@ function AdminPage() {
   const [votes, setVotes] = useState<Vote[]>([])
   const [loading, setLoading] = useState(false)
 
-  // Form states
+  // Form states (Add competitor)
   const [newRoundTitle, setNewRoundTitle] = useState('')
   const [endsAtDate, setEndsAtDate] = useState<Date | undefined>(undefined)
   const [playerNick, setPlayerNick] = useState('')
@@ -45,7 +45,18 @@ function AdminPage() {
   const [formError, setFormError] = useState<string | null>(null)
   const [remainingTime, setRemainingTime] = useState<number>(0)
 
+  // Form states (Edit competitor)
+  const [editingCompetitor, setEditingCompetitor] = useState<Competitor | null>(null)
+  const [editNick, setEditNick] = useState('')
+  const [editTheme, setEditTheme] = useState<FrameTheme>('jack-pumpkin')
+  const [editImageFile, setEditImageFile] = useState<File | null>(null)
+  const [editImageUrlInput, setEditImageUrlInput] = useState('')
+  const [editImagePreview, setEditImagePreview] = useState<string | null>(null)
+  const [editUploading, setEditUploading] = useState(false)
+  const [editError, setEditError] = useState<string | null>(null)
+
   const fileInputRef = useRef<HTMLInputElement>(null)
+  const editFileInputRef = useRef<HTMLInputElement>(null)
 
   // Timer updater
   useEffect(() => {
@@ -294,6 +305,105 @@ function AdminPage() {
     if (!confirm('Remover este participante da rodada?')) return
     await supabase.from('competitors').delete().eq('id', id)
     setCompetitors((prev) => prev.filter((c) => c.id !== id))
+    if (editingCompetitor?.id === id) {
+      setEditingCompetitor(null)
+    }
+  }
+
+  // Start editing a competitor
+  function handleStartEdit(c: Competitor) {
+    setEditingCompetitor(c)
+    setEditNick(c.player_nick)
+    setEditTheme(c.frame_theme as FrameTheme)
+    setEditImageUrlInput(c.image_url)
+    setEditImagePreview(c.image_url)
+    setEditImageFile(null)
+    setEditError(null)
+    if (editFileInputRef.current) editFileInputRef.current.value = ''
+  }
+
+  // Cancel editing
+  function handleCancelEdit() {
+    setEditingCompetitor(null)
+    setEditNick('')
+    setEditImageFile(null)
+    setEditImageUrlInput('')
+    setEditImagePreview(null)
+    setEditError(null)
+  }
+
+  // Edit file selection
+  function handleEditFileChange(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0]
+    if (file) {
+      setEditImageFile(file)
+      const reader = new FileReader()
+      reader.onloadend = () => setEditImagePreview(reader.result as string)
+      reader.readAsDataURL(file)
+    }
+  }
+
+  // Save edited competitor
+  async function handleSaveEdit(e: React.FormEvent) {
+    e.preventDefault()
+    if (!editingCompetitor || !currentRound) return
+    if (!editNick.trim()) {
+      setEditError('O Nick não pode ficar vazio!')
+      return
+    }
+
+    setEditUploading(true)
+    setEditError(null)
+
+    let finalImageUrl = editImageUrlInput.trim()
+
+    if (editImageFile) {
+      const ext = editImageFile.name.split('.').pop() || 'png'
+      const fileName = `${currentRound.id}/${Date.now()}_${editNick.trim()}.${ext}`
+
+      const { data: uploadData, error: uploadErr } = await supabase.storage
+        .from('builds')
+        .upload(fileName, editImageFile, { upsert: true })
+
+      if (uploadErr) {
+        if (editImagePreview) {
+          finalImageUrl = editImagePreview
+        } else {
+          setEditError('Erro ao subir nova imagem: ' + uploadErr.message)
+          setEditUploading(false)
+          return
+        }
+      } else if (uploadData) {
+        const { data: publicUrlData } = supabase.storage
+          .from('builds')
+          .getPublicUrl(uploadData.path)
+        finalImageUrl = publicUrlData.publicUrl
+      }
+    }
+
+    if (!finalImageUrl) {
+      setEditError('A imagem não pode ficar vazia!')
+      setEditUploading(false)
+      return
+    }
+
+    const { error: updateErr } = await supabase
+      .from('competitors')
+      .update({
+        player_nick: editNick.trim(),
+        frame_theme: editTheme,
+        image_url: finalImageUrl,
+      })
+      .eq('id', editingCompetitor.id)
+
+    if (updateErr) {
+      setEditError('Erro ao atualizar: ' + updateErr.message)
+    } else {
+      await loadCompetitors(currentRound.id)
+      handleCancelEdit()
+    }
+
+    setEditUploading(false)
   }
 
   // PIN Login Screen
@@ -635,7 +745,7 @@ function AdminPage() {
                     key={c.id}
                     className="p-3 bg-[#14121d] border-2 border-[#2a2a3a] flex flex-col justify-between gap-3 relative group"
                   >
-                    {/* Top Row: Place, Skin, Nick, Delete */}
+                    {/* Top Row: Place, Skin, Nick, Edit & Delete Actions */}
                     <div className="flex items-center justify-between gap-2">
                       <div className="flex items-center gap-2">
                         <span className="text-[8px] text-[#ff7800]">#{i + 1}</span>
@@ -646,17 +756,26 @@ function AdminPage() {
                         </div>
                       </div>
 
-                      <button
-                        onClick={() => handleDeleteCompetitor(c.id)}
-                        className="text-[#f55] hover:text-[#f22] p-1 transition-colors"
-                        title="Remover competidor"
-                      >
-                        <Trash2 size={14} />
-                      </button>
+                      <div className="flex items-center gap-1">
+                        <button
+                          onClick={() => handleStartEdit(c)}
+                          className="text-[#ff9a3c] hover:text-[#ffcc00] p-1.5 transition-colors bg-[#1a1825] border border-[#ff780044] rounded hover:border-[#ff7800]"
+                          title="Editar competidor"
+                        >
+                          <Pencil size={13} />
+                        </button>
+                        <button
+                          onClick={() => handleDeleteCompetitor(c.id)}
+                          className="text-[#f55] hover:text-[#f22] p-1.5 transition-colors bg-[#1a1825] border border-[#f554] rounded hover:border-[#f55]"
+                          title="Remover competidor"
+                        >
+                          <Trash2 size={13} />
+                        </button>
+                      </div>
                     </div>
 
                     {/* Image Thumbnail */}
-                    <div className="aspect-video overflow-hidden border border-[#333]">
+                    <div className="aspect-video overflow-hidden border border-[#333] bg-black">
                       <img src={c.image_url} alt={c.player_nick} className="w-full h-full object-cover" />
                     </div>
 
@@ -678,6 +797,144 @@ function AdminPage() {
           )}
         </div>
       </div>
+
+      {/* Modal de Edição de Competidor */}
+      {editingCompetitor && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/85 backdrop-blur-sm"
+          onClick={handleCancelEdit}
+        >
+          <div
+            className="relative max-w-xl w-full bg-[#0e0d13] border-4 border-[#ff7800] p-5 shadow-[0_0_50px_rgba(255,120,0,0.5)] max-h-[90vh] overflow-y-auto"
+            onClick={(e) => e.stopPropagation()}
+          >
+            {/* Header do Modal */}
+            <div className="flex items-center justify-between pb-3 mb-4 border-b-2 border-[#ff780044]">
+              <h2 className="text-xs text-[#ff9a3c] flex items-center gap-2">
+                <Pencil size={14} /> EDITAR COMPETIDOR
+              </h2>
+              <button
+                onClick={handleCancelEdit}
+                className="text-[#888] hover:text-white p-1"
+              >
+                <X size={18} />
+              </button>
+            </div>
+
+            <form onSubmit={handleSaveEdit} className="space-y-4">
+              {/* Nick & Skin Preview */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div>
+                  <label className="text-[8px] text-[#aaa] block mb-1.5">NICK NO MINECRAFT:</label>
+                  <input
+                    type="text"
+                    value={editNick}
+                    onChange={(e) => setEditNick(e.target.value)}
+                    placeholder="Ex: Dark_Shadow11"
+                    className="w-full text-[9px] p-2 bg-[#1a1825] border border-[#444] text-white focus:outline-none focus:border-[#ff7800]"
+                  />
+                </div>
+
+                {/* Skin Preview Box */}
+                <div className="flex items-center gap-3 bg-[#14121d] p-2 border border-[#333]">
+                  {editNick.trim() ? (
+                    <>
+                      <PlayerHead nick={editNick.trim()} size={36} />
+                      <div>
+                        <div className="text-[9px] text-[#ff9a3c]">{editNick.trim()}</div>
+                        <div className="text-[7px] text-[#00c9a7]">Skin atualizada ✓</div>
+                      </div>
+                    </>
+                  ) : (
+                    <div className="text-[7px] text-[#666]">Digite o nick</div>
+                  )}
+                </div>
+              </div>
+
+              {/* Theme Selector */}
+              <div>
+                <label className="text-[8px] text-[#aaa] block mb-2">MOLDURA TEMÁTICA:</label>
+                <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-2">
+                  {THEMES.map((theme) => (
+                    <button
+                      type="button"
+                      key={theme.id}
+                      onClick={() => setEditTheme(theme.id)}
+                      className={`p-2 border text-center transition-all ${
+                        editTheme === theme.id
+                          ? 'bg-[#2a1705] border-[#ff7800] text-[#ff9a3c] shadow-[0_0_10px_rgba(255,120,0,0.4)]'
+                          : 'bg-[#14121d] border-[#333] text-[#777] hover:border-[#555]'
+                      }`}
+                    >
+                      <div className="text-base mb-1">{theme.icon}</div>
+                      <div className="text-[7px] leading-tight">{theme.name}</div>
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              {/* Image Upload / Replacement */}
+              <div>
+                <label className="text-[8px] text-[#aaa] block mb-1.5">SUBSTITUIR FOTO / SCREENSHOT:</label>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 items-center">
+                  <div>
+                    <input
+                      type="file"
+                      accept="image/*"
+                      ref={editFileInputRef}
+                      onChange={handleEditFileChange}
+                      className="text-[8px] text-[#888] file:mr-2 file:py-1.5 file:px-3 file:border-0 file:text-[8px] file:font-['Press_Start_2P'] file:bg-[#ff7800] file:text-black cursor-pointer"
+                    />
+                    <div className="text-[7px] text-[#555] mt-1.5">Ou cole nova URL:</div>
+                    <input
+                      type="url"
+                      value={editImageUrlInput}
+                      onChange={(e) => {
+                        setEditImageUrlInput(e.target.value)
+                        setEditImagePreview(e.target.value)
+                      }}
+                      placeholder="https://..."
+                      className="w-full text-[8px] p-1.5 mt-1 bg-[#1a1825] border border-[#444] text-white focus:outline-none focus:border-[#ff7800]"
+                    />
+                  </div>
+
+                  {/* Preview da Imagem no Modal */}
+                  <div className="aspect-video bg-[#050508] border border-[#333] flex items-center justify-center overflow-hidden">
+                    {editImagePreview ? (
+                      <img src={editImagePreview} alt="Preview" className="w-full h-full object-cover" />
+                    ) : (
+                      <div className="text-[7px] text-[#444]">Sem foto</div>
+                    )}
+                  </div>
+                </div>
+              </div>
+
+              {editError && (
+                <p className="text-[8px] text-[#ff4444] bg-[#200] p-2 border border-[#600]">{editError}</p>
+              )}
+
+              {/* Ações do Formulário */}
+              <div className="flex gap-2 pt-2 border-t border-[#333]">
+                <MinecraftButton
+                  variant="pumpkin"
+                  type="submit"
+                  isLoading={editUploading}
+                  className="flex-1"
+                >
+                  ✓ Salvar Alterações
+                </MinecraftButton>
+                <button
+                  type="button"
+                  onClick={handleCancelEdit}
+                  className="px-4 py-2 bg-[#200] border-2 border-[#600] text-[#ff8888] text-[8px] hover:bg-[#300] transition-colors"
+                >
+                  Cancelar
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
     </div>
   )
 }
