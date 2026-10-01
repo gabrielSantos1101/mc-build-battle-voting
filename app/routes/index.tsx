@@ -284,22 +284,32 @@ function VotingPage() {
   const [authReady, setAuthReady] = useState(false)
   const deviceId = useRef(getDeviceId())
 
-  // Sincronização do Timer em Tempo Real com o Relógio do Sistema
+  // Sincronização do Timer Baseado Exclusivamente no Timestamp de Término (Zero Drift)
   useEffect(() => {
-    if (!round?.ends_at) {
+    if (!round?.ends_at || round.status !== 'active') {
       setRemainingSeconds(0)
       return
     }
 
-    function updateTimer() {
+    function syncTimerWithTimestamp() {
+      // Calcula diretamente a diferença entre a data de encerramento e o Date.now()
       const remaining = getRemainingSeconds(round?.ends_at ?? null)
       setRemainingSeconds(remaining)
     }
 
-    updateTimer()
-    const interval = setInterval(updateTimer, 1000)
-    return () => clearInterval(interval)
-  }, [round?.ends_at])
+    syncTimerWithTimestamp()
+    const interval = setInterval(syncTimerWithTimestamp, 1000)
+
+    // Re-sincroniza imediatamente ao focar na aba ou voltar de sleep
+    window.addEventListener('focus', syncTimerWithTimestamp)
+    document.addEventListener('visibilitychange', syncTimerWithTimestamp)
+
+    return () => {
+      clearInterval(interval)
+      window.removeEventListener('focus', syncTimerWithTimestamp)
+      document.removeEventListener('visibilitychange', syncTimerWithTimestamp)
+    }
+  }, [round?.ends_at, round?.status])
 
   // Initialize auth (JWT + IP) on mount
   useEffect(() => {

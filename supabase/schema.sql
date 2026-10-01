@@ -28,15 +28,38 @@ create table if not exists public.competitors (
   created_at timestamptz not null default now()
 );
 
--- 3. Tabela de Votos (1 voto por device_id por rodada garantido pelo banco)
+-- 3. Tabela de Votos (1 voto por device_id por rodada garantido pelo banco + IP tracking)
 create table if not exists public.votes (
   id uuid primary key default gen_random_uuid(),
   round_id uuid not null references public.rounds(id) on delete cascade,
   competitor_id uuid not null references public.competitors(id) on delete cascade,
   device_id text not null,
+  ip text not null,
+  country text,
+  region text,
+  city text,
   created_at timestamptz not null default now(),
-  constraint unique_vote_per_device_round unique (round_id, device_id)
+  constraint unique_vote_per_device_round unique (round_id, device_id),
+  constraint unique_vote_per_ip_round unique (round_id, ip)
 );
+
+-- Garantir colunas de IP caso a tabela já exista
+alter table public.votes add column if not exists ip text;
+alter table public.votes add column if not exists country text;
+alter table public.votes add column if not exists region text;
+alter table public.votes add column if not exists city text;
+
+-- Adicionar constraint única para IP por rodada (se não existir)
+do $$
+begin
+  if not exists (
+    select 1 from pg_constraint 
+    where conname = 'unique_vote_per_ip_round' 
+    and conrelid = 'public.votes'::regclass
+  ) then
+    alter table public.votes add constraint unique_vote_per_ip_round unique (round_id, ip);
+  end if;
+end $$;
 
 -- ============================================================
 -- Habilitar Realtime nas tabelas

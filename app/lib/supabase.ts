@@ -24,7 +24,7 @@ export interface Round {
   status: RoundStatus
   show_live_results: boolean
   countdown_seconds: number | null
-  ends_at: string | null // Timestamp exato de término baseado na hora real
+  ends_at: string | null
   created_at: string
 }
 
@@ -42,10 +42,13 @@ export interface Vote {
   round_id: string
   competitor_id: string
   device_id: string
+  ip: string
+  country?: string
+  region?: string
+  city?: string
   created_at: string
 }
 
-// Derived: Competitor with vote count
 export interface CompetitorWithVotes extends Competitor {
   vote_count: number
   vote_percentage: number
@@ -90,6 +93,65 @@ export function markVotedInRound(roundId: string): void {
   localStorage.setItem(key, 'true')
 }
 
+/** Check if an IP has already voted in a round (server-side check) */
+export async function hasIPVotedInRound(roundId: string, ip: string): Promise<boolean> {
+  const { data, error } = await supabase
+    .from('votes')
+    .select('id')
+    .eq('round_id', roundId)
+    .eq('ip', ip)
+    .limit(1)
+    .maybeSingle()
+  
+  return !error && !!data
+}
+
+/** Initialize auth: get IP, create JWT, store token */
+export async function initializeAuth(): Promise<{ token: string; ipInfo: IPInfo; deviceId: string }> {
+  const deviceId = getDeviceId()
+  const ipInfo = await getClientIP()
+  const token = await createJWT({
+    sub: deviceId,
+    ip: ipInfo.ip,
+    country: ipInfo.country,
+    region: ipInfo.region,
+    city: ipInfo.city,
+  })
+  setStoredToken(token)
+  return { token, ipInfo, deviceId }
+}
+
+/** Get current auth payload from stored token */
+export async function getAuthPayload(): Promise<AuthPayload | null> {
+  const token = getStoredToken()
+  if (!token) return null
+  return verifyJWT(token)
+}
+
+/** Check if user can vote (not voted by device or IP) */
+export async function canVote(roundId: string): Promise<{ canVote: boolean; reason?: string }> {
+  const deviceId = getDeviceId()
+  const { data: deviceVote } = await supabase
+    .from('votes')
+    .select('id')
+    .eq('round_id', roundId)
+    .eq('device_id', deviceId)
+    .limit(1)
+    .maybeSingle()
+  
+  if (deviceVote) {
+    return { canVote: false, reason: 'device' }
+  }
+
+  const ipInfo = await getClientIP()
+  const ipVoted = await hasIPVotedInRound(roundId, ipInfo.ip)
+  if (ipVoted) {
+    return { canVote: false, reason: 'ip' }
+  }
+
+  return { canVote: true }
+}
+
 /** Compute vote counts and percentages from a list of votes */
 export function computeVoteStats(
   competitors: Competitor[],
@@ -115,14 +177,22 @@ export function computeVoteStats(
 /** Format remaining time from an exact target ISO timestamp (ends_at) */
 export function getRemainingSeconds(endsAt: string | null): number {
   if (!endsAt) return 0
-  const target = new Date(endsAt).getTime()
+  const targetTime = new Date(endsAt).getTime()
+  if (isNaN(targetTime)) return 0
   const now = Date.now()
-  const diffMs = target - now
+  const diffMs = targetTime - now
   return Math.max(0, Math.floor(diffMs / 1000))
 }
 
 export function formatTimeMMSS(seconds: number): string {
-  const mins = Math.floor(seconds / 60)
-  const secs = seconds % 60
+  if (isNaN(seconds) || seconds <= 0) return '00:00'
+  const hours = Math.floor(seconds / 3600)
+  const remainingSecs = seconds % 3600
+  const mins = Math.floor(remainingSecs / 60)
+  const secs = remainingSecs % 60
+
+  if (hours > 0) {
+    return `${hours.toString().padStart(2, '0')}:${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`
+  }
   return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`
 }

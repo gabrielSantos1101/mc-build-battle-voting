@@ -1,7 +1,7 @@
 import { createFileRoute } from '@tanstack/react-router'
 import React, { useState, useEffect, useRef } from 'react'
 import { motion } from 'framer-motion'
-import { Plus, Trash2, RefreshCw, Eye, EyeOff, Lock, ExternalLink, Image as ImageIcon, Clock, Pencil, X } from 'lucide-react'
+import { Plus, Trash2, RefreshCw, Eye, EyeOff, Lock, ExternalLink, Image as ImageIcon, Clock, Pencil, X, LogOut } from 'lucide-react'
 import { supabase, computeVoteStats, getRemainingSeconds, formatTimeMMSS } from '~/lib/supabase'
 import type { Round, Competitor, Vote, FrameTheme } from '~/lib/supabase'
 import { MinecraftHorrorFrame, FRAME_CONFIGS } from '~/components/MinecraftHorrorFrame'
@@ -12,7 +12,8 @@ export const Route = createFileRoute('/admin')({
   component: AdminPage,
 })
 
-const DEFAULT_PIN = import.meta.env.VITE_ADMIN_PIN || '1234'
+const ADMIN_EMAIL = 'admin@email.com'
+const DEFAULT_PASSWORD = 'GiodLgQjH7w'
 
 const THEMES: { id: FrameTheme; name: string; icon: string }[] = [
   { id: 'jack-pumpkin', name: 'Jack-o-Lantern', icon: '🎃' },
@@ -24,8 +25,12 @@ const THEMES: { id: FrameTheme; name: string; icon: string }[] = [
 
 function AdminPage() {
   const [isAuthenticated, setIsAuthenticated] = useState(false)
-  const [pinInput, setPinInput] = useState('')
-  const [pinError, setPinError] = useState(false)
+  const [authLoading, setAuthLoading] = useState(false)
+  const [authError, setAuthError] = useState<string | null>(null)
+  const [password, setPassword] = useState('')
+  const [showChangePassword, setShowChangePassword] = useState(false)
+  const [newPassword, setNewPassword] = useState('')
+  const [confirmPassword, setConfirmPassword] = useState('')
 
   const [rounds, setRounds] = useState<Round[]>([])
   const [currentRound, setCurrentRound] = useState<Round | null>(null)
@@ -58,17 +63,46 @@ function AdminPage() {
   const fileInputRef = useRef<HTMLInputElement>(null)
   const editFileInputRef = useRef<HTMLInputElement>(null)
 
-  // Timer updater
+  // Check auth on mount
   useEffect(() => {
-    if (!currentRound?.ends_at) {
+    async function checkAuth() {
+      const { data: { session } } = await supabase.auth.getSession()
+      if (session) {
+        setIsAuthenticated(true)
+      }
+      
+      // Listen for auth changes
+      const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+        setIsAuthenticated(!!session)
+        if (!session) {
+          setPassword('')
+        }
+      })
+      
+      return () => subscription.unsubscribe()
+    }
+    checkAuth()
+  }, [])
+
+  // Timer updater baseado estritamente no timestamp de término
+  useEffect(() => {
+    if (!currentRound?.ends_at || currentRound.status !== 'active') {
       setRemainingTime(0)
       return
     }
-    const tick = () => setRemainingTime(getRemainingSeconds(currentRound.ends_at))
-    tick()
-    const interval = setInterval(tick, 1000)
-    return () => clearInterval(interval)
-  }, [currentRound?.ends_at])
+    const syncTime = () => setRemainingTime(getRemainingSeconds(currentRound.ends_at))
+    syncTime()
+    const interval = setInterval(syncTime, 1000)
+
+    window.addEventListener('focus', syncTime)
+    document.addEventListener('visibilitychange', syncTime)
+
+    return () => {
+      clearInterval(interval)
+      window.removeEventListener('focus', syncTime)
+      document.removeEventListener('visibilitychange', syncTime)
+    }
+  }, [currentRound?.ends_at, currentRound?.status])
 
   // Load rounds on auth
   useEffect(() => {
@@ -142,15 +176,56 @@ function AdminPage() {
     return () => { supabase.removeChannel(channel) }
   }, [currentRound?.id])
 
-  // Login handler
-  function handleLogin(e: React.FormEvent) {
+  // Auth handlers - Supabase Auth
+  async function handleAuth(e: React.FormEvent) {
     e.preventDefault()
-    if (pinInput === DEFAULT_PIN) {
+    setAuthLoading(true)
+    setAuthError(null)
+
+    try {
+      const { error } = await supabase.auth.signInWithPassword({ 
+        email: ADMIN_EMAIL, 
+        password 
+      })
+      if (error) throw error
       setIsAuthenticated(true)
-      setPinError(false)
-    } else {
-      setPinError(true)
+    } catch (err: any) {
+      setAuthError(err.message || 'Erro na autenticação')
     }
+    setAuthLoading(false)
+  }
+
+  async function handleChangePassword() {
+    if (newPassword !== confirmPassword) {
+      setAuthError('Senhas não conferem')
+      return
+    }
+    if (newPassword.length < 6) {
+      setAuthError('Senha deve ter pelo menos 6 caracteres')
+      return
+    }
+    
+    setAuthLoading(true)
+    setAuthError(null)
+    
+    try {
+      const { error } = await supabase.auth.updateUser({ password: newPassword })
+      if (error) throw error
+      setShowChangePassword(false)
+      setNewPassword('')
+      setConfirmPassword('')
+    } catch (err: any) {
+      setAuthError(err.message || 'Erro ao alterar senha')
+    }
+    setAuthLoading(false)
+  }
+
+  async function handleLogout() {
+    await supabase.auth.signOut()
+    setIsAuthenticated(false)
+    setShowChangePassword(false)
+    setNewPassword('')
+    setConfirmPassword('')
   }
 
   // Create round
@@ -425,7 +500,7 @@ function AdminPage() {
     setEditUploading(false)
   }
 
-  // PIN Login Screen
+  // Supabase Auth Login Screen
   if (!isAuthenticated) {
     return (
       <div className="min-h-screen flex items-center justify-center p-4 bg-[#0a0912]">
@@ -434,26 +509,33 @@ function AdminPage() {
           animate={{ scale: 1, opacity: 1 }}
           className="w-full max-w-sm p-6 bg-[#0e0d13] border-4 border-[#ff7800] shadow-[0_0_30px_rgba(255,120,0,0.3)] text-center"
         >
-          <div className="text-4xl mb-3">🔒</div>
+          <div className="text-4xl mb-3">🔐</div>
           <h1 className="text-sm text-[#ff7800] mb-2 font-['Press_Start_2P']">ADMIN PANEL</h1>
-          <p className="text-[9px] text-[#888] mb-6 font-['Press_Start_2P']">Digite o PIN do Streamer</p>
+          <p className="text-[9px] text-[#888] mb-6 font-['Press_Start_2P']">
+            Usuário: <span className="text-[#ff9a3c]">{ADMIN_EMAIL}</span>
+          </p>
 
-          <form onSubmit={handleLogin} className="space-y-4">
-            <input
-              type="password"
-              maxLength={6}
-              value={pinInput}
-              onChange={(e) => setPinInput(e.target.value)}
-              placeholder="PIN"
-              autoFocus
-              className="w-full text-center tracking-widest text-lg py-3 px-4 bg-[#1a1825] border-2 border-[#ff780066] text-[#ff9a3c] font-['Press_Start_2P'] focus:outline-none focus:border-[#ff7800]"
-            />
+          <form onSubmit={handleAuth} className="space-y-4">
+            <div className="text-left space-y-2">
+              <label className="text-[8px] text-[#aaa] block mb-1.5 flex items-center gap-1">
+                <Lock size={12} /> Senha
+              </label>
+              <input
+                type="password"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                placeholder="Senha do admin"
+                autoComplete="current-password"
+                autoFocus
+                className="w-full text-[9px] py-3 px-4 bg-[#1a1825] border-2 border-[#ff780066] text-[#ff9a3c] font-['Press_Start_2P'] focus:outline-none focus:border-[#ff7800]"
+              />
+            </div>
 
-            {pinError && (
-              <p className="text-[8px] text-[#ff4444] font-['Press_Start_2P']">PIN incorreto!</p>
+            {authError && (
+              <p className="text-[8px] text-[#ff4444] font-['Press_Start_2P']">{authError}</p>
             )}
 
-            <MinecraftButton variant="pumpkin" type="submit" className="w-full">
+            <MinecraftButton variant="pumpkin" type="submit" className="w-full" isLoading={authLoading}>
               Entrar no Painel
             </MinecraftButton>
           </form>
@@ -475,7 +557,7 @@ function AdminPage() {
           <p className="text-[8px] text-[#888] mt-1">Controle de Votação Minecraft Build Battle</p>
         </div>
 
-        {/* Quick Links */}
+        {/* Quick Links + Logout */}
         <div className="flex flex-wrap gap-2 text-[8px]">
           <a
             href="/"
@@ -501,6 +583,18 @@ function AdminPage() {
           >
             <ExternalLink size={12} /> Cena OBS Pódio
           </a>
+          <button
+            onClick={handleLogout}
+            className="flex items-center gap-1 bg-[#2a1010] border border-[#ff444466] px-2.5 py-1.5 text-[#ff6666] hover:bg-[#3a1010] transition-colors"
+          >
+            <LogOut size={12} /> Sair
+          </button>
+          <button
+            onClick={() => setShowChangePassword(true)}
+            className="flex items-center gap-1 bg-[#1a2a10] border border-[#00c9a766] px-2.5 py-1.5 text-[#00c9a7] hover:bg-[#1a3a10] transition-colors"
+          >
+            <Lock size={12} /> Alterar Senha
+          </button>
         </div>
       </header>
 
@@ -945,6 +1039,83 @@ function AdminPage() {
                 <button
                   type="button"
                   onClick={handleCancelEdit}
+                  className="px-4 py-2 bg-[#200] border-2 border-[#600] text-[#ff8888] text-[8px] hover:bg-[#300] transition-colors"
+                >
+                  Cancelar
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* Change Password Modal */}
+      {showChangePassword && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/85 backdrop-blur-sm"
+          onClick={() => setShowChangePassword(false)}
+        >
+          <div
+            className="relative max-w-md w-full bg-[#0e0d13] border-4 border-[#00c9a7] p-5 shadow-[0_0_50px_rgba(0,201,167,0.5)]"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="flex items-center justify-between pb-3 mb-4 border-b-2 border-[#00c9a744]">
+              <h2 className="text-xs text-[#00c9a7] flex items-center gap-2">
+                <Lock size={14} /> ALTERAR SENHA
+              </h2>
+              <button
+                onClick={() => { setShowChangePassword(false); setNewPassword(''); setConfirmPassword(''); }}
+                className="text-[#888] hover:text-white p-1"
+              >
+                <X size={18} />
+              </button>
+            </div>
+
+            <form onSubmit={handleChangePassword} className="space-y-4">
+              <div className="text-left space-y-2">
+                <label className="text-[8px] text-[#aaa] block mb-1.5 flex items-center gap-1">
+                  <Lock size={12} /> Nova Senha
+                </label>
+                <input
+                  type="password"
+                  value={newPassword}
+                  onChange={(e) => setNewPassword(e.target.value)}
+                  placeholder="Mínimo 6 caracteres"
+                  autoComplete="new-password"
+                  className="w-full text-[9px] py-3 px-4 bg-[#1a1825] border-2 border-[#00c9a766] text-[#00c9a7] font-['Press_Start_2P'] focus:outline-none focus:border-[#00c9a7]"
+                />
+              </div>
+
+              <div className="text-left space-y-2">
+                <label className="text-[8px] text-[#aaa] block mb-1.5 flex items-center gap-1">
+                  <Lock size={12} /> Confirmar Nova Senha
+                </label>
+                <input
+                  type="password"
+                  value={confirmPassword}
+                  onChange={(e) => setConfirmPassword(e.target.value)}
+                  placeholder="Confirme a nova senha"
+                  autoComplete="new-password"
+                  className="w-full text-[9px] py-3 px-4 bg-[#1a1825] border-2 border-[#00c9a766] text-[#00c9a7] font-['Press_Start_2P'] focus:outline-none focus:border-[#00c9a7]"
+                />
+              </div>
+
+              {authError && (
+                <p className="text-[8px] text-[#ff4444] bg-[#200] p-2 border border-[#600]">{authError}</p>
+              )}
+
+              <div className="flex gap-2 pt-2 border-t border-[#333]">
+                <MinecraftButton
+                  variant="pale"
+                  type="submit"
+                  isLoading={authLoading}
+                  className="flex-1"
+                >
+                  ✓ Salvar Nova Senha
+                </MinecraftButton>
+                <button
+                  type="button"
+                  onClick={() => { setShowChangePassword(false); setNewPassword(''); setConfirmPassword(''); }}
                   className="px-4 py-2 bg-[#200] border-2 border-[#600] text-[#ff8888] text-[8px] hover:bg-[#300] transition-colors"
                 >
                   Cancelar
