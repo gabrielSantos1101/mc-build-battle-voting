@@ -21,9 +21,14 @@ export function PlayerSkin3D({
   const [SkinViewer, setSkinViewer] = useState<any>(null)
 
   useEffect(() => {
-    if (!skinUrl || !canvasRef.current) return
+    console.log('[PlayerSkin3D] Effect triggered', { skinUrl, size, animation })
+    if (!skinUrl || !canvasRef.current) {
+      console.log('[PlayerSkin3D] Skipping - no skinUrl or canvas', { skinUrl: !!skinUrl, canvas: !!canvasRef.current })
+      return
+    }
 
     import('skinview3d').then(m => {
+      console.log('[PlayerSkin3D] SkinViewer loaded, creating viewer')
       const viewer = new m.SkinViewer({
         canvas: canvasRef.current!,
         skin: skinUrl,
@@ -31,11 +36,17 @@ export function PlayerSkin3D({
         autoRotate: true,
         autoRotateSpeed: 0.3,
       })
+      console.log('[PlayerSkin3D] Viewer created')
       setSkinViewer(viewer)
+    }).catch(err => {
+      console.error('[PlayerSkin3D] Error loading skinview3d:', err)
     })
 
     return () => {
-      if (SkinViewer) SkinViewer.dispose()
+      if (SkinViewer) {
+        console.log('[PlayerSkin3D] Disposing viewer')
+        SkinViewer.dispose()
+      }
       setSkinViewer(null)
     }
   }, [skinUrl, animation])

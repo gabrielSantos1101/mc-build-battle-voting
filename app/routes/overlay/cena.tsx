@@ -48,7 +48,30 @@ function PodiumCard({
   const accent = FRAME_ACCENT[competitor.frame_theme as FrameTheme] ?? '#ff7800'
   const heights = { 1: 'h-72', 2: 'h-56', 3: 'h-44' }
   const scales = { 1: 'scale-110', 2: 'scale-100', 3: 'scale-95' }
-  const skinUrl = competitor.skin_url ?? null
+  const [skinUrl, setSkinUrl] = useState<string | null>(competitor.skin_url ?? null)
+
+  // Auto-fetch skin if missing
+  useEffect(() => {
+    if (!competitor.skin_url) {
+      const EDGE_FUNCTION_URL = import.meta.env.VITE_SUPABASE_URL?.replace('.supabase.co', '.supabase.co/functions/v1/get-skin')
+      if (EDGE_FUNCTION_URL) {
+        fetch(EDGE_FUNCTION_URL, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ nick: competitor.player_nick })
+        })
+          .then(res => res.ok ? res.json() : null)
+          .then(data => {
+            if (data?.skinUrl) {
+              setSkinUrl(data.skinUrl)
+              // Optionally update DB via Supabase (optional, for caching)
+              supabase.from('competitors').update({ skin_url: data.skinUrl }).eq('id', competitor.id)
+            }
+          })
+          .catch(console.error)
+      }
+    }
+  }, [competitor.id, competitor.player_nick])
 
   return (
     <motion.div
@@ -164,6 +187,7 @@ function OverlayCena() {
       setRound(roundData)
 
       const { data: comps } = await supabase.from('competitors').select('*').eq('round_id', roundData.id)
+      console.log('[OverlayCena] Competitors loaded:', comps?.map(c => ({ nick: c.player_nick, skin_url: c.skin_url })))
       setCompetitors(comps ?? [])
 
       const { data: voteData } = await supabase.from('votes').select('*').eq('round_id', roundData.id)
