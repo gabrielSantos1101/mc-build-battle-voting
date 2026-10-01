@@ -1,7 +1,7 @@
 import { createFileRoute } from '@tanstack/react-router'
 import React, { useEffect, useRef, useState } from 'react'
 import { motion } from 'framer-motion'
-import { X, ZoomIn, Clock } from 'lucide-react'
+import { X, Clock } from 'lucide-react'
 import {
   supabase,
   getDeviceId,
@@ -48,7 +48,7 @@ function CompetitorCard({
       animate={{ opacity: 1, y: 0 }}
       exit={{ opacity: 0, scale: 0.95 }}
       transition={{ duration: 0.25 }}
-      className="w-full max-w-[310px] mx-auto"
+      className="w-full max-w-[360px] mx-auto"
     >
       <MinecraftHorrorFrame
         theme={competitor.frame_theme as FrameTheme}
@@ -56,25 +56,19 @@ function CompetitorCard({
       >
         {/* Janela Central Segura */}
         <div className="w-full h-full flex flex-col justify-between py-1">
-          {/* 1. Screenshot da Construção */}
-          <div className="relative w-full aspect-[16/11] rounded-sm overflow-hidden border-2 border-black/95 bg-black/90 shadow-md group shrink-0">
+          {/* 1. Screenshot da Construção — clique para zoom */}
+          <div
+            className="relative w-full aspect-[16/11] rounded-sm overflow-hidden border-2 border-black/95 bg-black/90 shadow-md group shrink-0 cursor-zoom-in"
+            onClick={(e) => {
+              e.stopPropagation()
+              onZoom(competitor)
+            }}
+          >
             <img
               src={competitor.image_url}
               alt={`${competitor.player_nick}'s build`}
               className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
             />
-
-            {/* Botão de Zoom */}
-            <button
-              onClick={(e) => {
-                e.stopPropagation()
-                onZoom(competitor)
-              }}
-              className="absolute top-1 right-1 p-1 bg-black/85 text-white rounded border border-white/40 opacity-0 group-hover:opacity-100 transition-opacity hover:bg-black"
-              title="Ver em tela cheia"
-            >
-              <ZoomIn size={12} />
-            </button>
 
             {isMyVote && (
               <div className="absolute top-1 left-1 bg-[#00ff88] text-black px-1.5 py-0.5 text-[6px] font-bold tracking-wider rounded border border-black shadow">
