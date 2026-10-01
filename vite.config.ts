@@ -7,6 +7,9 @@ export default defineConfig({
     tailwindcss(),
     tsConfigPaths(),
   ],
+  resolve: {
+    dedupe: ['react', 'react-dom'],
+  },
   server: {
     port: 3000,
   },
