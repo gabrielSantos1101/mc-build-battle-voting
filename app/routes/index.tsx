@@ -551,18 +551,24 @@ function VotingPage() {
                     ⏳ AGUARDANDO INÍCIO
                   </span>
                 ) : votingTimeStatus === 'active' ? (
-                  <div className="flex items-center gap-2">
-                    <span className="text-[8px] sm:text-[9px] text-[#dcd7cb] tracking-wider" style={{ textShadow: '1px 1px 0 #000' }}>
-                      VOTAÇÃO TERMINA EM:
+                  round?.ends_at ? (
+                    <div className="flex items-center gap-2">
+                      <span className="text-[8px] sm:text-[9px] text-[#dcd7cb] tracking-wider" style={{ textShadow: '1px 1px 0 #000' }}>
+                        VOTAÇÃO TERMINA EM:
+                      </span>
+                      <span
+                        className={`text-[10px] sm:text-[11px] font-bold tracking-wider ${remainingSeconds <= 30 ? 'text-[#ff3333] animate-pulse' : 'text-[#ffaa00]'}
+                        `}
+                        style={{ textShadow: '0 0 8px rgba(255,170,0,0.7), 1px 1px 0 #000' }}
+                      >
+                        {formatTimeMMSS(remainingSeconds)}
+                      </span>
+                    </div>
+                  ) : (
+                    <span className="text-[9px] sm:text-[10px] text-[#00ff88] font-bold tracking-wider" style={{ textShadow: '0 0 8px rgba(0,255,136,0.6), 1px 1px 0 #000' }}>
+                      ● VOTAÇÃO ABERTA
                     </span>
-                    <span
-                      className={`text-[10px] sm:text-[11px] font-bold tracking-wider ${remainingSeconds <= 30 ? 'text-[#ff3333] animate-pulse' : 'text-[#ffaa00]'}
-                      `}
-                      style={{ textShadow: '0 0 8px rgba(255,170,0,0.7), 1px 1px 0 #000' }}
-                    >
-                      {formatTimeMMSS(remainingSeconds)}
-                    </span>
-                  </div>
+                  )
                 ) : votingTimeStatus === 'ended' ? (
                   <span className="text-[9px] sm:text-[10px] text-[#ffaa00] font-bold tracking-wider" style={{ textShadow: '0 0 8px rgba(255,170,0,0.6), 1px 1px 0 #000' }}>
                     🏆 VOTAÇÃO ENCERRADA
@@ -668,7 +674,7 @@ function VotingPage() {
 
       {/* FOOTER NÃO FIXO (ACOMPANHA O SCROLL NO FIM DA PÁGINA) */}
       <footer
-        className="w-full mt-12 relative z-20 border-t-2 border-[#7a3f1a]"
+        className="w-full relative z-20 border-t-2 border-[#7a3f1a]"
         style={{
           backgroundImage: 'url(/textures/wood-header-pattern.svg)',
           backgroundRepeat: 'repeat',

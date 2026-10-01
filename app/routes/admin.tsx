@@ -272,6 +272,9 @@ function AdminPage() {
     if (status === 'active') {
       if (startsAtDate) {
         updatePayload.starts_at = startsAtDate.toISOString()
+      } else {
+        // Se não definiu data/hora, inicia agora
+        updatePayload.starts_at = new Date().toISOString()
       }
     } else if (status === 'finished') {
       updatePayload.ends_at = new Date().toISOString()
