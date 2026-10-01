@@ -1,0 +1,30 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="32" height="64" viewBox="0 0 32 64" shape-rendering="crispEdges">
+  <!-- Coluna de Pedra / Deepslate Chiseled -->
+  <rect width="32" height="64" fill="#0c0a14" />
+  
+  <!-- Linhas verticais da coluna -->
+  <rect x="0" y="0" width="3" height="64" fill="#050408" />
+  <rect x="29" y="0" width="3" height="64" fill="#050408" />
+  
+  <!-- Highlight vertical -->
+  <rect x="3" y="0" width="2" height="64" fill="#1e1a2e" />
+  
+  <!-- Seções horizontais do pilar -->
+  <rect x="0" y="0" width="32" height="3" fill="#050408" />
+  <rect x="0" y="32" width="32" height="3" fill="#050408" />
+  
+  <!-- Brilho no topo dos blocos do pilar -->
+  <rect x="3" y="3" width="26" height="2" fill="#1e1a2e" />
+  <rect x="3" y="35" width="26" height="2" fill="#1e1a2e" />
+  
+  <!-- Runas / Textura interna esculpida -->
+  <rect x="8" y="10" width="16" height="14" fill="#141122" />
+  <rect x="12" y="14" width="8" height="6" fill="#0a0812" />
+  
+  <rect x="8" y="42" width="16" height="14" fill="#141122" />
+  <rect x="12" y="46" width="8" height="6" fill="#0a0812" />
+  
+  <!-- Veios de Sculk / Obsidiana brilhando na lateral -->
+  <rect x="14" y="16" width="4" height="2" fill="#00c9a7" opacity="0.8" />
+  <rect x="14" y="48" width="4" height="2" fill="#9d50db" opacity="0.8" />
+</svg>

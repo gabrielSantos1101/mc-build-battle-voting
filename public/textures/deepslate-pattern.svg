@@ -1,0 +1,42 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="64" height="64" viewBox="0 0 64 64" shape-rendering="crispEdges">
+  <!-- Fundo base Deepslate Escuro -->
+  <rect width="64" height="64" fill="#0d0c14" />
+  
+  <!-- Blocos de Deepslate Bricks chanfrados -->
+  <!-- Linhas horizontais de argamassa -->
+  <rect x="0" y="0" width="64" height="2" fill="#08070d" />
+  <rect x="0" y="32" width="64" height="2" fill="#08070d" />
+  <rect x="0" y="62" width="64" height="2" fill="#08070d" />
+  
+  <!-- Linhas verticais -->
+  <rect x="0" y="0" width="2" height="32" fill="#08070d" />
+  <rect x="32" y="32" width="2" height="32" fill="#08070d" />
+  <rect x="62" y="0" width="2" height="32" fill="#08070d" />
+  
+  <!-- Relevo dos blocos (Top/Left highlight) -->
+  <rect x="2" y="2" width="60" height="2" fill="#181624" />
+  <rect x="2" y="2" width="2" height="28" fill="#181624" />
+  <rect x="2" y="34" width="28" height="2" fill="#181624" />
+  <rect x="2" y="34" width="2" height="26" fill="#181624" />
+  <rect x="34" y="34" width="28" height="2" fill="#181624" />
+  <rect x="34" y="34" width="2" height="26" fill="#181624" />
+  
+  <!-- Detalhes de textura de ardósia -->
+  <rect x="8" y="10" width="8" height="4" fill="#14121f" />
+  <rect x="20" y="16" width="12" height="3" fill="#14121f" />
+  <rect x="42" y="8" width="14" height="4" fill="#14121f" />
+  <rect x="10" y="44" width="16" height="4" fill="#14121f" />
+  <rect x="44" y="48" width="10" height="3" fill="#14121f" />
+  
+  <!-- Partículas de Crying Obsidian (Roxo Místico) -->
+  <rect x="14" y="22" width="2" height="2" fill="#7928ca" opacity="0.7" />
+  <rect x="16" y="22" width="2" height="4" fill="#9d50db" opacity="0.8" />
+  <rect x="50" y="14" width="3" height="3" fill="#9d50db" opacity="0.6" />
+  <rect x="24" y="52" width="2" height="3" fill="#7928ca" opacity="0.7" />
+  
+  <!-- Partículas de Sculk (Turquesa Bioluminescente) -->
+  <rect x="48" y="24" width="2" height="2" fill="#00c9a7" opacity="0.8" />
+  <rect x="4" y="18" width="2" height="2" fill="#00e5ff" opacity="0.6" />
+  <rect x="38" y="42" width="2" height="2" fill="#00c9a7" opacity="0.7" />
+  <rect x="58" y="56" width="2" height="2" fill="#00e5ff" opacity="0.8" />
+</svg>
