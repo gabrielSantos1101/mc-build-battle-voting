@@ -7,7 +7,7 @@ import { MinecraftButton, PlayerHead, StatusBadge } from '~/components/custom'
 import type { Competitor, FrameTheme, Round, Vote } from '~/lib/supabase'
 import { computeVoteStats, formatTimeMMSS, getRemainingSeconds, supabase } from '~/lib/supabase'
 
-export const Route = createFileRoute('/admin')({
+export const Route = createFileRoute()({
   component: AdminPage,
 })
 
@@ -595,7 +595,7 @@ function AdminPage() {
         {/* Quick Links + Logout */}
         <div className="flex flex-wrap gap-2 text-[8px]">
           <a
-            href="/" text-pumpkin-light
+            href="/"
             target="_blank"
             rel="noreferrer"
             className="flex items-center gap-1 bg-obsidian-light border border-[#ff780066] px-2.5 py-1.5 text-pumpkin-light hover:bg-[#ff780022] transition-colors"
@@ -635,7 +635,7 @@ function AdminPage() {
 
       <div className="max-w-6xl mx-auto grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Left Column: Rounds & Round Controls */}
-        <div className="space-y-6">text-pumpkin-light
+        <div className="space-y-6">
           {/* Create Round */}
           <div className="p-4 bg-obsidian border-2 border-[#ff780066]">
             <h2 className="text-xs text-pumpkin-light mb-3 flex items-center gap-2">
@@ -662,7 +662,7 @@ function AdminPage() {
               {rounds.map((r) => (
                 <button
                   key={r.id}
-                  onClick={() => selectRound(r)} text-pumpkin-light
+                  onClick={() => selectRound(r)}
                   className={`w-full text-left p-2.5 border text-[8px] flex items-center justify-between transition-colors ${currentRound?.id === r.id
                     ? 'bg-[#2a1705] border-pumpkin text-pumpkin-light'
                     : 'bg-[#14121d] border-[#222] text-[#888] hover:bg-obsidian-light'
@@ -767,7 +767,7 @@ function AdminPage() {
 
         {/* Right Column (2 cols): Add Competitor & Competitor List */}
         <div className="lg:col-span-2 space-y-6">
-          {/* Add Competitor Form */}text-pumpkin-light
+          {/* Add Competitor Form */}
           {currentRound ? (
             <div className="p-4 bg-obsidian border-2 border-[#ff780066]">
               <h2 className="text-xs text-pumpkin-light mb-4 flex items-center gap-2">
@@ -793,7 +793,7 @@ function AdminPage() {
                   {/* Skin Preview Box */}
                   <div className="flex items-center gap-3 bg-[#14121d] p-2 border border-[#333]">
                     {playerNick.trim() ? (
-                      <>text-pumpkin-light
+                      <>
                         <PlayerHead nick={playerNick.trim()} size={36} />
                         <div>
                           <div className="text-[9px] text-pumpkin-light">{playerNick.trim()}</div>
@@ -968,7 +968,7 @@ function AdminPage() {
             <div
               className="relative max-w-xl w-full bg-obsidian border-4 border-pumpkin p-5 shadow-[0_0_50px_rgba(255,120,0,0.5)] max-h-[90vh] overflow-y-auto"
               onClick={(e) => e.stopPropagation()}
-            >text-pumpkin-light
+            >
               {/* Header do Modal */}
               <div className="flex items-center justify-between pb-3 mb-4 border-b-2 border-[#ff780044]">
                 <h2 className="text-xs text-pumpkin-light flex items-center gap-2">
@@ -999,7 +999,7 @@ function AdminPage() {
                   {/* Skin Preview Box */}
                   <div className="flex items-center gap-3 bg-[#14121d] p-2 border border-[#333]">
                     {editNick.trim() ? (
-                      <>text-pumpkin-light
+                      <>
                         <PlayerHead nick={editNick.trim()} size={36} />
                         <div>
                           <div className="text-[9px] text-pumpkin-light">{editNick.trim()}</div>

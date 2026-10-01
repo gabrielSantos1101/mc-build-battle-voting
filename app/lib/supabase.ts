@@ -1,7 +1,7 @@
 import { createClient } from '@supabase/supabase-js'
 
-const supabaseUrl = import.meta.env.VITE_SUPABASE_URL || 'https://exemplo.supabase.co'
-const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.exemplo'
+const supabaseUrl = (import.meta as any).env?.VITE_SUPABASE_URL || 'https://exemplo.supabase.co'
+const supabaseAnonKey = (import.meta as any).env?.VITE_SUPABASE_ANON_KEY || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.exemplo'
 
 export const supabase = createClient(supabaseUrl, supabaseAnonKey)
 
@@ -258,4 +258,130 @@ export function getVotingTimeStatusText(startsAt: string | null, endsAt: string 
     case 'ended':
       return { label: 'Encerrada', variant: 'ended' }
   }
+}
+
+export interface IPInfo {
+  ip: string
+  country?: string
+  region?: string
+  city?: string
+  latitude?: number
+  longitude?: number
+}
+
+export interface AuthPayload {
+  sub: string
+  ip: string
+  country?: string
+  region?: string
+  city?: string
+  iat: number
+  exp: number
+}
+
+let ipCache: IPInfo | null = null
+let ipCacheTime = 0
+const IP_CACHE_DURATION = 10 * 60 * 1000
+
+export async function getClientIP(): Promise<IPInfo> {
+  const now = Date.now()
+  if (ipCache && now - ipCacheTime < IP_CACHE_DURATION) {
+    return ipCache
+  }
+
+  const services = [
+    'https://api.ipify.org?format=json',
+    'https://ipapi.co/json/',
+    'https://ipwho.is/',
+  ]
+
+  for (const service of services) {
+    try {
+      const response = await fetch(service, { signal: AbortSignal.timeout(5000) })
+      if (!response.ok) continue
+      const data = await response.json()
+      
+      let ipInfo: IPInfo
+      if (service.includes('ipify')) {
+        ipInfo = { ip: data.ip }
+      } else if (service.includes('ipapi')) {
+        ipInfo = { ip: data.ip, country: data.country_name, region: data.region, city: data.city }
+      } else {
+        ipInfo = { ip: data.ip, country: data.country, region: data.region, city: data.city, latitude: data.latitude, longitude: data.longitude }
+      }
+      
+      ipCache = ipInfo
+      ipCacheTime = now
+      return ipInfo
+    } catch {
+      continue
+    }
+  }
+
+  const fallback: IPInfo = { ip: 'unknown' }
+  ipCache = fallback
+  ipCacheTime = now
+  return fallback
+}
+
+const JWT_SECRET = (import.meta as any).env?.VITE_JWT_SECRET || 'build-battle-secret-key-change-in-production'
+
+async function importKey(): Promise<CryptoKey> {
+  const encoder = new TextEncoder()
+  const keyData = encoder.encode(JWT_SECRET)
+  return crypto.subtle.importKey('raw', keyData, { name: 'HMAC', hash: 'SHA-256' }, false, ['sign', 'verify'])
+}
+
+export async function createJWT(payload: Omit<AuthPayload, 'iat' | 'exp'>): Promise<string> {
+  const key = await importKey()
+  const now = Math.floor(Date.now() / 1000)
+  const exp = now + 24 * 60 * 60
+  
+  const header = { alg: 'HS256', typ: 'JWT' }
+  const fullPayload = { ...payload, iat: now, exp }
+  
+  const encoder = new TextEncoder()
+  const headerB64 = btoa(JSON.stringify(header)).replace(/=/g, '').replace(/\+/g, '-').replace(/\//g, '_')
+  const payloadB64 = btoa(JSON.stringify(fullPayload)).replace(/=/g, '').replace(/\+/g, '-').replace(/\//g, '_')
+  
+  const signature = await crypto.subtle.sign('HMAC', key, encoder.encode(`${headerB64}.${payloadB64}`))
+  const signatureB64 = btoa(String.fromCharCode(...new Uint8Array(signature))).replace(/=/g, '').replace(/\+/g, '-').replace(/\//g, '_')
+  
+  return `${headerB64}.${payloadB64}.${signatureB64}`
+}
+
+export async function verifyJWT(token: string): Promise<AuthPayload | null> {
+  try {
+    const [headerB64, payloadB64, signatureB64] = token.split('.')
+    if (!headerB64 || !payloadB64 || !signatureB64) return null
+    
+    const key = await importKey()
+    const encoder = new TextEncoder()
+    const signature = new Uint8Array(atob(signatureB64.replace(/-/g, '+').replace(/_/g, '/')).split('').map(c => c.charCodeAt(0)))
+    
+    const valid = await crypto.subtle.verify('HMAC', key, signature, encoder.encode(`${headerB64}.${payloadB64}`))
+    if (!valid) return null
+    
+    const payload = JSON.parse(atob(payloadB64.replace(/-/g, '+').replace(/_/g, '/')))
+    if (payload.exp < Math.floor(Date.now() / 1000)) return null
+    
+    return payload as AuthPayload
+  } catch {
+    return null
+  }
+}
+
+export function getStoredToken(): string | null {
+  if (typeof window === 'undefined') return null
+  return localStorage.getItem('bb_auth_token')
+}
+
+export function setStoredToken(token: string): void {
+  if (typeof window === 'undefined') return
+  localStorage.setItem('bb_auth_token', token)
+}
+
+export function clearStoredToken(): void {
+  if (typeof window === 'undefined') return
+  localStorage.removeItem('bb_auth_token')
 }

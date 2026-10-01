@@ -6,7 +6,7 @@ import type { Round, Competitor, Vote, CompetitorWithVotes, FrameTheme } from '~
 import { PlayerHead, VoteBar } from '~/components/custom'
 import { TrophyBadge } from '~/components/custom'
 
-export const Route = createFileRoute('/overlay/top3')({
+export const Route = createFileRoute()({
   component: OverlayTop3,
 })
 

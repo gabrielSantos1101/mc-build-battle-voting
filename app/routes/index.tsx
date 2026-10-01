@@ -20,7 +20,7 @@ import {
   supabase
 } from '~/lib/supabase'
 
-export const Route = createFileRoute('/')({
+export const Route = createFileRoute()({
   component: VotingPage,
 })
 

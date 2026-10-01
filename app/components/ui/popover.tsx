@@ -57,11 +57,12 @@ export const PopoverTrigger = React.forwardRef<HTMLDivElement, PopoverTriggerPro
     }
 
     if (asChild && React.isValidElement(children)) {
+      const child = children as React.ReactElement<any>
       return (
         <div ref={context.triggerRef} className="w-full">
-          {React.cloneElement(children as React.ReactElement<any>, {
+          {React.cloneElement(child, {
             onClick: (e: React.MouseEvent) => {
-              children.props.onClick?.(e)
+              child.props.onClick?.(e)
               handleClick(e as any)
             },
           })}

@@ -5,7 +5,7 @@ import { supabase, computeVoteStats } from '~/lib/supabase'
 import type { Round, Competitor, Vote, CompetitorWithVotes, FrameTheme } from '~/lib/supabase'
 import { PlayerHead, TrophyBadge } from '~/components/custom'
 
-export const Route = createFileRoute('/overlay/cena')({
+export const Route = createFileRoute()({
   component: OverlayCena,
 })
 
