@@ -2,9 +2,9 @@
 import * as React from 'react'
 import { DayPicker } from 'react-day-picker'
 import { ptBR } from 'date-fns/locale'
-import { format } from 'date-fns'
 import { ChevronLeft, ChevronRight } from 'lucide-react'
 import { cn } from '~/lib/cn'
+import 'react-day-picker/style.css'
 
 export type CalendarProps = React.ComponentProps<typeof DayPicker>
 
@@ -15,41 +15,39 @@ export function Calendar({
   ...props
 }: CalendarProps) {
   return (
-    <div className="select-none p-3 bg-[#0e0d13] font-['Press_Start_2P']">
+    <div className="w-[300px] select-none p-3.5 bg-[#0e0d13] text-[#e0e0e0] font-sans">
       <style>{`
-        /* Reset e layout do DayPicker */
-        .rdp-root {
+        .admin-calendar {
           --rdp-accent-color: #ff7800;
           --rdp-accent-background-color: #2a1705;
           margin: 0;
           width: 100%;
         }
-        .rdp-months {
-          display: flex;
-          flex-direction: column;
+        .admin-calendar .rdp-months {
+          width: 100%;
         }
-        .rdp-month {
+        .admin-calendar .rdp-month {
+          width: 100%;
           display: flex;
           flex-direction: column;
           gap: 12px;
         }
-        .rdp-month_caption {
+        .admin-calendar .rdp-month_caption {
           display: flex;
           align-items: center;
           justify-content: space-between;
-          padding: 0 4px;
-          height: 28px;
+          height: 32px;
           position: relative;
+          padding: 0 4px;
         }
-        .rdp-caption_label {
-          font-family: 'Press Start 2P', monospace;
-          font-size: 9px;
+        .admin-calendar .rdp-caption_label {
+          font-size: 14px;
+          font-weight: 600;
           color: #ffaa00;
           text-transform: capitalize;
-          letter-spacing: 0.5px;
           margin: 0 auto;
         }
-        .rdp-nav {
+        .admin-calendar .rdp-nav {
           position: absolute;
           inset: 0;
           display: flex;
@@ -57,137 +55,116 @@ export function Calendar({
           justify-content: space-between;
           pointer-events: none;
         }
-        .rdp-button_previous, .rdp-button_next {
+        .admin-calendar .rdp-button_previous,
+        .admin-calendar .rdp-button_next {
           pointer-events: auto;
           display: inline-flex;
           align-items: center;
           justify-content: center;
-          width: 24px;
-          height: 24px;
+          width: 28px;
+          height: 28px;
           background: #1a1825;
-          border: 1px solid #444;
+          border: 1px solid #3c3850;
           color: #ff9a3c;
+          border-radius: 6px;
           cursor: pointer;
-          border-radius: 2px;
-          transition: all 0.15s;
+          transition: all 0.15s ease;
         }
-        .rdp-button_previous:hover, .rdp-button_next:hover {
+        .admin-calendar .rdp-button_previous:hover,
+        .admin-calendar .rdp-button_next:hover {
           background: #2a1705;
           border-color: #ff7800;
           color: #ffcc00;
-          transform: translateY(-1px);
         }
-        .rdp-button_previous:active, .rdp-button_next:active {
-          transform: translateY(1px);
-        }
-        .rdp-month_grid {
-          width: 100%;
-          border-collapse: separate;
-          border-spacing: 4px;
-        }
-        .rdp-weekdays {
+        .admin-calendar .rdp-weekdays {
           display: grid;
           grid-template-columns: repeat(7, 1fr);
           gap: 4px;
-          margin-bottom: 4px;
-          border-bottom: 1px solid #222;
-          padding-bottom: 6px;
+          margin-bottom: 2px;
+          border-bottom: 1px solid #222030;
+          padding-bottom: 8px;
         }
-        .rdp-weekday {
+        .admin-calendar .rdp-weekday {
           display: flex;
           align-items: center;
           justify-content: center;
-          font-family: 'Press Start 2P', monospace;
-          font-size: 8px;
-          font-weight: normal;
-          color: #888;
-          text-align: center;
+          font-size: 11px;
+          font-weight: 500;
+          color: #8e8a9f;
+          text-transform: capitalize;
           height: 20px;
         }
-        .rdp-weeks {
+        .admin-calendar .rdp-weeks {
           display: flex;
           flex-direction: column;
           gap: 4px;
         }
-        .rdp-week {
+        .admin-calendar .rdp-week {
           display: grid;
           grid-template-columns: repeat(7, 1fr);
           gap: 4px;
         }
-        .rdp-day {
+        .admin-calendar .rdp-day {
           display: flex;
           align-items: center;
           justify-content: center;
         }
-        .rdp-day_button {
+        .admin-calendar .rdp-day_button {
           display: inline-flex;
           align-items: center;
           justify-content: center;
-          width: 32px;
-          height: 32px;
-          font-family: 'Press Start 2P', monospace;
-          font-size: 8px;
-          color: #ddd;
-          background: #14121d;
-          border: 1px solid #2a2a38;
-          border-radius: 2px;
+          width: 34px;
+          height: 34px;
+          font-size: 13px;
+          font-weight: 500;
+          color: #e6e6e6;
+          background: transparent;
+          border: 1px solid transparent;
+          border-radius: 6px;
           cursor: pointer;
-          transition: all 0.1s;
+          transition: all 0.12s ease;
         }
-        .rdp-day_button:hover {
-          background: #2a1705;
-          border-color: #ff780088;
+        .admin-calendar .rdp-day_button:hover {
+          background: #252033;
+          border-color: #ff780066;
           color: #ffaa00;
         }
-        .rdp-selected .rdp-day_button {
+        .admin-calendar .rdp-selected .rdp-day_button {
           background: #ff7800 !important;
-          border-color: #ffcc66 !important;
-          color: #000 !important;
-          font-weight: bold;
-          box-shadow: 0 0 10px rgba(255, 120, 0, 0.6);
+          border-color: #ffaa33 !important;
+          color: #000000 !important;
+          font-weight: 700;
+          box-shadow: 0 0 12px rgba(255, 120, 0, 0.4);
         }
-        .rdp-today:not(.rdp-selected) .rdp-day_button {
-          border-color: #ff7800;
+        .admin-calendar .rdp-today:not(.rdp-selected) .rdp-day_button {
+          border-color: #ff7800aa;
           color: #ff9a3c;
+          font-weight: 600;
         }
-        .rdp-outside .rdp-day_button {
-          color: #383548;
-          background: transparent;
-          border-color: transparent;
+        .admin-calendar .rdp-outside .rdp-day_button {
+          color: #4a4658;
         }
-        .rdp-outside .rdp-day_button:hover {
-          color: #666;
-          border-color: #222;
+        .admin-calendar .rdp-outside .rdp-day_button:hover {
+          color: #777;
+          background: #181524;
         }
-        .rdp-disabled .rdp-day_button {
-          color: #222;
-          background: transparent;
-          border-color: transparent;
+        .admin-calendar .rdp-disabled .rdp-day_button {
+          color: #2a2836;
           cursor: not-allowed;
           opacity: 0.3;
         }
       `}</style>
 
       <DayPicker
+        className="admin-calendar"
         showOutsideDays={showOutsideDays}
         locale={ptBR}
-        formatters={{
-          // Formata os dias da semana com 1 única letra limpa (D, S, T, Q, Q, S, S)
-          formatWeekdayName: (date) => {
-            const letter = format(date, 'EEEEE', { locale: ptBR })
-            return letter.toUpperCase()
-          },
-          // Formata o mês no cabeçalho
-          formatCaption: (date) => {
-            return format(date, 'MMMM yyyy', { locale: ptBR })
-          },
-        }}
         components={{
           Chevron: ({ orientation }) =>
             orientation === 'left' ? (
-              <ChevronLeft size={14} />
+              <ChevronLeft size={16} />
             ) : (
-              <ChevronRight size={14} />
+              <ChevronRight size={16} />
             ),
         }}
         {...props}
