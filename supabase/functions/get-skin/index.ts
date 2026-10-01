@@ -1,71 +1,85 @@
-import { serve } from "https://deno.land/std@0.168.0/http/server.ts"
-import { createClient } from "https://esm.sh/@supabase/supabase-js@2"
+// Setup type definitions for built-in Supabase Runtime APIs
+import "jsr:@supabase/functions-js/edge-runtime.d.ts";
+import { withSupabase } from "jsr:@supabase/server@^1";
 
-const corsHeaders = {
-  'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+interface ReqPayload {
+  nick: string;
+  competitor_id?: string;
 }
 
-serve(async (req) => {
-  if (req.method === 'OPTIONS') {
-    return new Response('ok', { headers: corsHeaders })
-  }
+interface SkinResponse {
+  skinUrl?: string;
+  error?: string;
+}
 
-  try {
-    const { nick } = await req.json()
-    
-    if (!nick) {
+console.info("get-skin function started");
+
+export default {
+  fetch: async (req: Request): Promise<Response> => {
+    // Handle CORS preflight
+    if (req.method === 'OPTIONS') {
+      return new Response('ok', {
+        headers: {
+          'Access-Control-Allow-Origin': '*',
+          'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+        },
+      });
+    }
+
+    try {
+      const { nick, competitor_id }: ReqPayload = await req.json();
+
+      if (!nick) {
+        return new Response(
+          JSON.stringify({ error: 'nick is required' }),
+          { 
+            status: 400, 
+            headers: { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*' } 
+          }
+        );
+      }
+
+      // 1. Get UUID from Mojang API
+      const uuidRes = await fetch(`https://api.mojang.com/users/profiles/minecraft/${nick}`);
+      if (!uuidRes.ok) {
+        return new Response(
+          JSON.stringify({ error: 'Player not found' }),
+          { status: 404, headers: { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*' } }
+        );
+      }
+      const { id: uuid } = await uuidRes.json();
+
+      // 2. Get skin URL from Mojang sessionserver
+      const profileRes = await fetch(`https://sessionserver.mojang.com/session/minecraft/profile/${uuid}`);
+      if (!profileRes.ok) {
+        return new Response(
+          JSON.stringify({ error: 'Profile not found' }),
+          { status: 404, headers: { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*' } }
+        );
+      }
+
+      const profile = await profileRes.json();
+      const textures = JSON.parse(atob(profile.properties[0].value));
+      const skinUrl = textures.textures.SKIN.url;
+
+      // Optional: Save to database if competitor_id provided
+      // Note: Database operations would need Supabase client with service role
+      // For now just return the skin URL
+
       return new Response(
-        JSON.stringify({ error: 'nick is required' }),
-        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      )
-    }
-
-    // 1. Get UUID from Mojang
-    const uuidRes = await fetch(`https://api.mojang.com/users/profiles/minecraft/${nick}`)
-    if (!uuidRes.ok) {
+        JSON.stringify({ skinUrl }),
+        { 
+          headers: { 
+            'Content-Type': 'application/json', 
+            'Access-Control-Allow-Origin': '*' 
+          } 
+        }
+      );
+    } catch (error) {
       return new Response(
-        JSON.stringify({ error: 'Player not found' }),
-        { status: 404, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      )
+        JSON.stringify({ error: error.message }),
+        { status: 500, headers: { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*' } }
+      );
     }
-    const { id: uuid } = await uuidRes.json()
-
-    // 2. Get skin URL from Mojang sessionserver
-    const profileRes = await fetch(`https://sessionserver.mojang.com/session/minecraft/profile/${uuid}`)
-    if (!profileRes.ok) {
-      return new Response(
-        JSON.stringify({ error: 'Profile not found' }),
-        { status: 404, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      )
-    }
-    
-    const profile = await profileRes.json()
-    const textures = JSON.parse(atob(profile.properties[0].value))
-    const skinUrl = textures.textures.SKIN.url
-
-    // Optional: Save to database if competitor_id provided
-    const { competitor_id } = await req.json().catch(() => ({}))
-    
-    if (competitor_id) {
-      const supabaseUrl = Deno.env.get('SUPABASE_URL')!
-      const supabaseKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
-      const supabase = createClient(supabaseUrl, supabaseKey)
-      
-      await supabase
-        .from('competitors')
-        .update({ skin_url: skinUrl })
-        .eq('id', competitor_id)
-    }
-
-    return new Response(
-      JSON.stringify({ skinUrl }),
-      { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-    )
-  } catch (error) {
-    return new Response(
-      JSON.stringify({ error: error.message }),
-      { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-    )
-  }
-})
+  },
+};
