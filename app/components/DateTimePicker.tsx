@@ -1,13 +1,15 @@
-/**
- * DateTimePicker — shadcn/ui Date Picker + Time inputs
- * Usa Popover + Calendar do shadcn com estilo escuro do painel admin.
- */
-import React, { useState, useEffect } from 'react'
-import { format, addMinutes } from 'date-fns'
+// DatePickerTime — padrão exato shadcn/ui date-picker com time input
+// Adaptado de https://ui.shadcn.com/docs/components/base/date-picker
+import * as React from 'react'
+import { format } from 'date-fns'
 import { ptBR } from 'date-fns/locale'
-import { CalendarIcon } from 'lucide-react'
-import { Popover, PopoverContent, PopoverTrigger } from '~/components/shadcn/popover'
+import { ChevronDownIcon } from 'lucide-react'
+import { addMinutes } from 'date-fns'
+
+import { Button } from '~/components/shadcn/button'
 import { Calendar } from '~/components/shadcn/calendar'
+import { Field, FieldGroup, FieldLabel } from '~/components/shadcn/field'
+import { Popover, PopoverContent, PopoverTrigger } from '~/components/shadcn/popover'
 import { cn } from '~/lib/cn'
 
 interface DateTimePickerProps {
@@ -17,182 +19,153 @@ interface DateTimePickerProps {
   minDate?: Date
 }
 
-export function DateTimePicker({
-  value,
-  onChange,
-  label = 'Data e Hora de Encerramento',
-  minDate,
-}: DateTimePickerProps) {
-  const [open, setOpen] = useState(false)
-  const [timeH, setTimeH] = useState(value ? value.getHours() : 23)
-  const [timeM, setTimeM] = useState(value ? value.getMinutes() : 59)
+export function DateTimePicker({ value, onChange, label, minDate }: DateTimePickerProps) {
+  const [open, setOpen] = React.useState(false)
 
-  useEffect(() => {
-    if (value) {
-      setTimeH(value.getHours())
-      setTimeM(value.getMinutes())
-    }
-  }, [value])
-
-  function buildDate(day: Date, h: number, m: number): Date {
-    const d = new Date(day)
-    d.setHours(h, m, 0, 0)
-    return d
-  }
+  // Valor de hora no formato HH:MM para o input nativo
+  const timeValue = value ? format(value, 'HH:mm') : '23:59'
 
   function handleDaySelect(day: Date | undefined) {
-    if (!day) { onChange(undefined); return }
-    onChange(buildDate(day, timeH, timeM))
+    if (!day) { onChange(undefined); setOpen(false); return }
+    // Preserva a hora atual ao mudar o dia
+    const [h, m] = timeValue.split(':').map(Number)
+    const merged = new Date(day)
+    merged.setHours(h, m, 0, 0)
+    onChange(merged)
+    setOpen(false)
   }
 
-  function handleHourChange(raw: string) {
-    const h = Math.max(0, Math.min(23, parseInt(raw) || 0))
-    setTimeH(h)
-    if (value) onChange(buildDate(value, h, timeM))
-  }
-
-  function handleMinChange(raw: string) {
-    const m = Math.max(0, Math.min(59, parseInt(raw) || 0))
-    setTimeM(m)
-    if (value) onChange(buildDate(value, timeH, m))
+  function handleTimeChange(e: React.ChangeEvent<HTMLInputElement>) {
+    const [h, m] = e.target.value.split(':').map(Number)
+    const base = value ?? new Date()
+    const merged = new Date(base)
+    merged.setHours(h, m, 0, 0)
+    onChange(merged)
   }
 
   function applyQuickAdd(mins: number) {
-    const base = value ?? new Date()
-    const next = addMinutes(base, mins)
-    setTimeH(next.getHours())
-    setTimeM(next.getMinutes())
+    const next = addMinutes(value ?? new Date(), mins)
     onChange(next)
   }
-
-  const displayText = value
-    ? format(value, "dd/MM/yyyy 'às' HH:mm", { locale: ptBR })
-    : null
 
   return (
     <div>
       {label && (
-        <label className="text-[7px] text-[#aaa] block mb-1.5 font-['Press_Start_2P']">
-          {label}
-        </label>
+        <p className="text-[7px] text-[#aaa] font-['Press_Start_2P'] mb-2">{label}</p>
       )}
 
-      <Popover open={open} onOpenChange={setOpen}>
-        {/* Trigger */}
-        <PopoverTrigger asChild>
+      {/* Estilos do calendário */}
+      <style>{`
+        .admin-cal .rdp-month_caption { color: #ff9a3c; font-family: 'Press Start 2P', monospace; font-size: 9px; }
+        .admin-cal .rdp-nav button { background: #1a1825; border: 1px solid #333; color: #aaa; cursor: pointer; padding: 4px 6px; }
+        .admin-cal .rdp-nav button:hover { border-color: #ff7800; color: #ff9a3c; }
+        .admin-cal .rdp-weekday { color: #555; font-family: 'Press Start 2P', monospace; font-size: 7px; }
+        .admin-cal .rdp-day_button { font-family: 'Press Start 2P', monospace; font-size: 7px; color: #ccc; background: transparent; border: 1px solid transparent; border-radius: 2px; cursor: pointer; width: 32px; height: 32px; }
+        .admin-cal .rdp-day_button:hover { background: #2a1705; border-color: #ff780066; color: #ff9a3c; }
+        .admin-cal .rdp-selected .rdp-day_button { background: #ff7800 !important; color: #000 !important; border-color: #ffcc66 !important; }
+        .admin-cal .rdp-today .rdp-day_button { border-color: #ff780088; color: #ff9a3c; }
+        .admin-cal .rdp-outside .rdp-day_button { color: #333; }
+        .admin-cal .rdp-disabled .rdp-day_button { color: #2a2a2a; cursor: not-allowed; }
+      `}</style>
+
+      <FieldGroup className="flex-row items-end gap-2">
+        {/* Campo de Data */}
+        <Field className="flex-1">
+          <FieldLabel htmlFor="date-field" className="font-['Press_Start_2P']">
+            DATA
+          </FieldLabel>
+          <Popover open={open} onOpenChange={setOpen}>
+            <PopoverTrigger asChild>
+              <Button
+                id="date-field"
+                variant="outline"
+                className={cn(
+                  'w-full justify-between font-normal text-[8px] font-["Press_Start_2P"]',
+                  'bg-[#1a1825] border-[#555] text-left hover:bg-[#1a1825] hover:border-[#ff7800]',
+                  'h-auto py-2.5 px-2.5',
+                  !value && 'text-[#555]',
+                  value && 'text-[#ffcc66]',
+                )}
+              >
+                {value ? format(value, 'dd/MM/yyyy', { locale: ptBR }) : 'Selecionar...'}
+                <ChevronDownIcon className="h-3 w-3 text-[#ff9a3c] shrink-0" />
+              </Button>
+            </PopoverTrigger>
+            <PopoverContent
+              className="w-auto p-0 border-2 border-[#ff780066] bg-[#0e0d13] shadow-[0_8px_32px_rgba(0,0,0,0.95)]"
+              align="start"
+            >
+              <Calendar
+                className="admin-cal"
+                mode="single"
+                selected={value}
+                captionLayout="dropdown"
+                defaultMonth={value}
+                onSelect={handleDaySelect}
+                locale={ptBR}
+                disabled={minDate ? { before: minDate } : undefined}
+              />
+            </PopoverContent>
+          </Popover>
+        </Field>
+
+        {/* Campo de Hora (input nativo type="time") */}
+        <Field className="w-32">
+          <FieldLabel htmlFor="time-field" className="font-['Press_Start_2P']">
+            HORA
+          </FieldLabel>
+          <input
+            id="time-field"
+            type="time"
+            value={timeValue}
+            onChange={handleTimeChange}
+            className={cn(
+              'w-full text-[9px] py-2.5 px-2 font-["Press_Start_2P"]',
+              'bg-[#1a1825] border border-[#555] text-[#ffcc00]',
+              'focus:outline-none focus:border-[#ff7800]',
+              'appearance-none',
+              '[&::-webkit-calendar-picker-indicator]:hidden',
+              '[&::-webkit-calendar-picker-indicator]:appearance-none',
+            )}
+          />
+        </Field>
+      </FieldGroup>
+
+      {/* Atalhos rápidos */}
+      <div className="flex flex-wrap gap-1.5 mt-2">
+        <span className="text-[6px] text-[#555] w-full font-['Press_Start_2P']">ATALHOS:</span>
+        {[
+          { label: '+15min', mins: 15 },
+          { label: '+30min', mins: 30 },
+          { label: '+1h', mins: 60 },
+          { label: '+2h', mins: 120 },
+        ].map(({ label: lbl, mins }) => (
+          <button
+            key={lbl}
+            type="button"
+            onClick={() => applyQuickAdd(mins)}
+            className="text-[7px] px-2 py-1 bg-[#1a1825] border border-[#ff780055] text-[#ff9a3c] hover:bg-[#2a1705] transition-colors font-['Press_Start_2P']"
+          >
+            {lbl}
+          </button>
+        ))}
+        {value && (
           <button
             type="button"
-            className={cn(
-              "w-full flex items-center gap-2 text-left text-[8px] p-2.5",
-              "bg-[#1a1825] border border-[#555] font-['Press_Start_2P']",
-              "hover:border-[#ff7800] transition-colors",
-              !value && "text-[#555]",
-              value && "text-[#ffcc66]",
-            )}
+            onClick={() => onChange(undefined)}
+            className="text-[7px] px-2 py-1 bg-[#200] border border-[#600] text-[#f66] hover:bg-[#300] transition-colors font-['Press_Start_2P'] ml-auto"
           >
-            <CalendarIcon size={13} className="text-[#ff9a3c] shrink-0" />
-            <span>{displayText ?? 'Escolher data e hora...'}</span>
+            Limpar
           </button>
-        </PopoverTrigger>
+        )}
+      </div>
 
-        {/* Popover Content */}
-        <PopoverContent
-          className="w-auto p-0 border-2 border-[#ff780066] bg-[#0e0d13] shadow-[0_8px_32px_rgba(0,0,0,0.95)]"
-          align="start"
-        >
-          {/* Calendário shadcn — estilo override inline */}
-          <style>{`
-            .admin-cal { --rdp-accent-color: #ff7800; }
-            .admin-cal .rdp-month_caption { color: #ff9a3c; font-family: 'Press Start 2P', monospace; font-size: 9px; }
-            .admin-cal .rdp-nav button { background: #1a1825; border: 1px solid #333; color: #aaa; }
-            .admin-cal .rdp-nav button:hover { border-color: #ff7800; color: #ff9a3c; }
-            .admin-cal .rdp-weekday { color: #555; font-family: 'Press Start 2P', monospace; font-size: 7px; }
-            .admin-cal .rdp-day_button {
-              font-family: 'Press Start 2P', monospace; font-size: 7px;
-              color: #ccc; background: transparent; border: 1px solid transparent; border-radius: 2px; cursor: pointer;
-            }
-            .admin-cal .rdp-day_button:hover { background: #2a1705; border-color: #ff780066; color: #ff9a3c; }
-            .admin-cal .rdp-selected .rdp-day_button { background: #ff7800 !important; color: #000 !important; border-color: #ffcc66 !important; }
-            .admin-cal .rdp-today .rdp-day_button { border-color: #ff780088; color: #ff9a3c; }
-            .admin-cal .rdp-outside .rdp-day_button { color: #333; }
-            .admin-cal .rdp-disabled .rdp-day_button { color: #2a2a2a; cursor: not-allowed; }
-          `}</style>
-
-          <Calendar
-            className="admin-cal"
-            mode="single"
-            selected={value}
-            onSelect={handleDaySelect}
-            locale={ptBR}
-            disabled={minDate ? { before: minDate } : undefined}
-            initialFocus
-          />
-
-          {/* Separador */}
-          <div className="border-t border-[#333] mx-3" />
-
-          {/* Time Picker */}
-          <div className="p-3 space-y-3">
-            <div className="flex items-center justify-center gap-2">
-              <span className="text-[7px] text-[#888] font-['Press_Start_2P']">HORA:</span>
-              <input
-                type="number"
-                min={0}
-                max={23}
-                value={String(timeH).padStart(2, '0')}
-                onChange={(e) => handleHourChange(e.target.value)}
-                className="w-12 text-center text-[10px] py-1.5 bg-[#1a1825] border border-[#555] text-[#ffcc00] font-['Press_Start_2P'] focus:outline-none focus:border-[#ff7800]"
-              />
-              <span className="text-[#ff9a3c] font-bold text-lg">:</span>
-              <input
-                type="number"
-                min={0}
-                max={59}
-                value={String(timeM).padStart(2, '0')}
-                onChange={(e) => handleMinChange(e.target.value)}
-                className="w-12 text-center text-[10px] py-1.5 bg-[#1a1825] border border-[#555] text-[#ffcc00] font-['Press_Start_2P'] focus:outline-none focus:border-[#ff7800]"
-              />
-              <span className="text-[7px] text-[#666] font-['Press_Start_2P']">HH:MM</span>
-            </div>
-
-            {/* Atalhos */}
-            <div className="flex flex-wrap gap-1.5 pt-2 border-t border-[#222]">
-              <span className="text-[6px] text-[#555] w-full font-['Press_Start_2P']">ATALHOS:</span>
-              {[
-                { label: '+15min', mins: 15 },
-                { label: '+30min', mins: 30 },
-                { label: '+1h', mins: 60 },
-                { label: '+2h', mins: 120 },
-              ].map(({ label: lbl, mins }) => (
-                <button
-                  key={lbl}
-                  type="button"
-                  onClick={() => applyQuickAdd(mins)}
-                  className="text-[7px] px-2 py-1 bg-[#1a1825] border border-[#ff780055] text-[#ff9a3c] hover:bg-[#2a1705] transition-colors font-['Press_Start_2P']"
-                >
-                  {lbl}
-                </button>
-              ))}
-              <button
-                type="button"
-                onClick={() => { onChange(undefined); setOpen(false) }}
-                className="text-[7px] px-2 py-1 bg-[#200] border border-[#600] text-[#f66] hover:bg-[#300] transition-colors font-['Press_Start_2P'] ml-auto"
-              >
-                Limpar
-              </button>
-            </div>
-
-            {/* Confirmar */}
-            <button
-              type="button"
-              onClick={() => setOpen(false)}
-              className="w-full text-[8px] py-2 bg-[#ff7800] text-black font-['Press_Start_2P'] border-2 border-[#ffcc66] hover:bg-[#ff9a3c] transition-colors shadow-[0_2px_0_#803300]"
-            >
-              ✓ Confirmar
-            </button>
-          </div>
-        </PopoverContent>
-      </Popover>
+      {/* Preview do valor final */}
+      {value && (
+        <div className="mt-2 text-[7px] text-[#00ff88] font-['Press_Start_2P'] flex items-center gap-1.5">
+          ✓ Encerramento: {format(value, "dd/MM/yyyy 'às' HH:mm", { locale: ptBR })}
+        </div>
+      )}
     </div>
   )
 }
