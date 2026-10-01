@@ -180,24 +180,43 @@ function AdminPage() {
   async function updateRoundStatus(status: 'draft' | 'active' | 'paused' | 'finished') {
     if (!currentRound) return
 
-    let endsAt: string | null = currentRound.ends_at
+    const updatePayload: Record<string, any> = { status }
+
     if (status === 'active') {
-      // Usa o timestamp exato escolhido no DateTimePicker
-      endsAt = endsAtDate ? endsAtDate.toISOString() : null
+      if (endsAtDate) {
+        updatePayload.ends_at = endsAtDate.toISOString()
+      }
     } else if (status === 'finished' || status === 'draft') {
-      endsAt = null
+      updatePayload.ends_at = null
     }
 
     const { error } = await supabase
       .from('rounds')
-      .update({ status, ends_at: endsAt })
+      .update(updatePayload)
       .eq('id', currentRound.id)
 
-    if (!error) {
-      const updated = { ...currentRound, status, ends_at: endsAt }
-      setCurrentRound(updated)
-      setRounds((prev) => prev.map((r) => (r.id === currentRound.id ? updated : r)))
+    if (error) {
+      console.error('Erro ao atualizar status da rodada:', error)
+      // Se houver erro com coluna ends_at, tenta atualizar apenas o status
+      const { error: fallbackErr } = await supabase
+        .from('rounds')
+        .update({ status })
+        .eq('id', currentRound.id)
+
+      if (!fallbackErr) {
+        const updated = { ...currentRound, status }
+        setCurrentRound(updated)
+        setRounds((prev) => prev.map((r) => (r.id === currentRound.id ? updated : r)))
+        return
+      }
+
+      alert('Erro ao atualizar status: ' + (error.message || 'Verifique sua conexão com o banco.'))
+      return
     }
+
+    const updated = { ...currentRound, ...updatePayload }
+    setCurrentRound(updated)
+    setRounds((prev) => prev.map((r) => (r.id === currentRound.id ? updated : r)))
   }
 
   // Toggle suspense mode
