@@ -14,19 +14,22 @@ export const Route = createFileRoute()({
 const ADMIN_EMAIL = 'admin@email.com'
 const DEFAULT_PASSWORD = 'GiodLgQjH7w'
 
-// Helper to fetch skin URL from Mojang API
+const EDGE_FUNCTION_URL = import.meta.env.VITE_SUPABASE_URL?.replace('.supabase.co', '.supabase.co/functions/v1/get-skin')
+
+// Helper to fetch skin URL via Edge Function (no CORS issues)
 async function fetchSkinUrl(nick: string): Promise<string | null> {
   try {
-    const uuidRes = await fetch(`https://api.mojang.com/users/profiles/minecraft/${nick}`)
-    if (!uuidRes.ok) return null
-    const { id: uuid } = await uuidRes.json()
+    if (!EDGE_FUNCTION_URL) return null
     
-    const profileRes = await fetch(`https://sessionserver.mojang.com/session/minecraft/profile/${uuid}`)
-    if (!profileRes.ok) return null
-    const profile = await profileRes.json()
+    const res = await fetch(EDGE_FUNCTION_URL, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ nick })
+    })
     
-    const textures = JSON.parse(atob(profile.properties[0].value))
-    return textures.textures.SKIN.url
+    if (!res.ok) return null
+    const data = await res.json()
+    return data.skinUrl ?? null
   } catch {
     return null
   }
@@ -372,6 +375,40 @@ function AdminPage() {
 
     await supabase.from('votes').delete().eq('round_id', currentRound.id)
     setVotes([])
+  }
+
+  // Populate missing skin_urls for current round competitors
+  async function handlePopulateSkinUrls() {
+    if (!currentRound) return
+    if (!confirm('Buscar e salvar skins dos competidores que não têm skin_url?')) return
+
+    const { data: competitors } = await supabase
+      .from('competitors')
+      .select('id, player_nick')
+      .eq('round_id', currentRound.id)
+      .is('skin_url', null)
+
+    if (!competitors || competitors.length === 0) {
+      alert('Todos os competidores já têm skin_url!')
+      return
+    }
+
+    let success = 0
+    for (const c of competitors) {
+      const skinUrl = await fetchSkinUrl(c.player_nick)
+      if (skinUrl) {
+        const { error } = await supabase
+          .from('competitors')
+          .update({ skin_url: skinUrl })
+          .eq('id', c.id)
+        if (!error) success++
+      }
+      // Small delay to avoid rate limiting
+      await new Promise(r => setTimeout(r, 200))
+    }
+
+    alert(`Skins atualizadas: ${success}/${competitors.length}`)
+    await loadCompetitors(currentRound.id)
   }
 
   // File selection
@@ -739,11 +776,18 @@ function AdminPage() {
                     <span>Resta: {formatTimeMMSS(remainingTime)}</span>
                   </div>
                 )}
-                {(currentRound?.status === 'active' || currentRound?.status === 'finished') && currentRound.starts_at && (
-                  <div className="mt-2 text-[8px] text-[#ff5555] flex items-center gap-1.5">
-                    <span>⚠ Data/hora de início travada (votação já iniciada/encerrada)</span>
-                  </div>
-                )}
+{(currentRound?.status === 'active' || currentRound?.status === 'finished') && currentRound.starts_at && (
+                    <div className="mt-2 text-[8px] text-[#ff5555] flex items-center gap-1.5">
+                      <span>⚠ Data/hora de início travada (votação já iniciada/encerrada)</span>
+                    </div>
+                  )}
+                  {/* Populate Skin URLs Button */}
+                  <button
+                    onClick={handlePopulateSkinUrls}
+                    className="mt-2 w-full text-[8px] p-2 border flex items-center justify-center gap-2 transition-colors bg-[#1a1a2e] border-[#7928ca] text-[#9d50db] hover:bg-[#2a1a3e] hover:border-[#9d50db]"
+                  >
+                    <span>🎭 Popular Skins (Mojang API)</span>
+                  </button>
               </div>
 
               <div className="space-y-2 pt-2 border-t border-[#333]">
