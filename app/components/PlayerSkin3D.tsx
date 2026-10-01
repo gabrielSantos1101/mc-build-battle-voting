@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
+import { ReactSkinview3d } from 'react-skinview3d'
 
 interface PlayerSkin3DProps {
   skinUrl: string
@@ -9,73 +10,59 @@ export function PlayerSkin3D({
   skinUrl, 
   size = 256
 }: PlayerSkin3DProps) {
-  const canvasRef = useRef<HTMLCanvasElement>(null)
-  const [viewer, setViewer] = useState<any>(null)
+  const containerRef = useRef<HTMLDivElement>(null)
+  const [skinLoaded, setSkinLoaded] = useState(false)
 
   useEffect(() => {
-    console.log('[PlayerSkin3D] Effect triggered', { skinUrl, size })
-    if (!skinUrl || !canvasRef.current) {
-      console.log('[PlayerSkin3D] Skipping - no skinUrl or canvas', { skinUrl: !!skinUrl, canvas: !!canvasRef.current })
-      return
-    }
-
-    let viewer: any = null
-
-    // Test if skin URL loads first
+    if (!skinUrl) return
+    
     const img = new Image()
     img.crossOrigin = 'anonymous'
     img.src = skinUrl
     img.onload = () => {
-      console.log('[PlayerSkin3D] Skin image loaded successfully', { width: img.width, height: img.height })
-      
-      import('skinview3d').then(m => {
-        console.log('[PlayerSkin3D] SkinViewer module loaded', Object.keys(m))
-        
-        const { SkinViewer } = m
-        
-        // Ensure canvas has proper dimensions BEFORE creating viewer
-        const canvas = canvasRef.current!
-        canvas.width = size
-        canvas.height = size
-        canvas.style.width = `${size}px`
-        canvas.style.height = `${size}px`
-        
-        // Force a layout recalculation
-        canvas.getContext('2d')
-        
-        const viewer = new m.SkinViewer({
-          canvas: canvas,
-          skin: skinUrl,
-          autoRotate: true,
-          autoRotateSpeed: 0.3,
-        })
-        console.log('[PlayerSkin3D] Viewer created')
-        
-        setViewer(viewer)
-      }).catch(err => {
-        console.error('[PlayerSkin3D] Error loading skinview3d:', err)
-      })
+      console.log('[PlayerSkin3D] Skin image loaded', { width: img.width, height: img.height })
+      setSkinLoaded(true)
     }
     img.onerror = (err) => {
-      console.error('[PlayerSkin3D] Failed to load skin image:', err, skinUrl)
+      console.error('[PlayerSkin3D] Failed to load skin:', err, skinUrl)
     }
     img.crossOrigin = 'anonymous'
+  }, [skinUrl])
 
-    return () => {
-      if (viewer) {
-        console.log('[PlayerSkin3D] Disposing viewer')
-        viewer.dispose()
-      }
-    }
-  }, [skinUrl, size])
+  if (!skinLoaded || !skinUrl) {
+    return (
+      <div 
+        ref={containerRef}
+        style={{ 
+          width: size, 
+          height: size, 
+          background: '#0a0a0a',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          color: '#444',
+          fontSize: '10px',
+          fontFamily: 'monospace'
+        }}
+      >
+        Loading...
+      </div>
+    )
+  }
 
   return (
-    <canvas 
-      ref={canvasRef} 
-      width={size} 
-      height={size} 
-      className="w-full h-full image-rendering-pixelated"
-      style={{ imageRendering: 'pixelated', background: '#0a0a0a', width: `${size}px`, height: `${size}px` }}
-    />
+    <div 
+      ref={containerRef}
+      style={{ width: size, height: size }}
+    >
+      <ReactSkinview3d
+        skinUrl={skinUrl}
+        autoRotate={true}
+        autoRotateSpeed={0.3}
+        width={size}
+        height={size}
+        style={{ width: size, height: size }}
+      />
+    </div>
   )
 }
