@@ -67,12 +67,12 @@ export function PlayerSkin3D({
           backgroundColor: 0x000000
         }}
         onReady={(viewer) => {
-          // Enable wave animation
+          // Enable walk animation (walking motion)
           try {
-            const anim = viewer.createAnimation('wave')
+            const anim = viewer.createAnimation('walk')
             viewer.animations.add(anim)
-            viewer.animations.play('wave')
-            console.log('[PlayerSkin3D] Wave animation started')
+            viewer.animations.play('walk')
+            console.log('[PlayerSkin3D] Walk animation started')
           } catch (e) {
             console.warn('[PlayerSkin3D] Animation error:', e)
           }
