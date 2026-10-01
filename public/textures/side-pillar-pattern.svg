@@ -1,30 +1,39 @@
 <svg xmlns="http://www.w3.org/2000/svg" width="32" height="64" viewBox="0 0 32 64" shape-rendering="crispEdges">
-  <!-- Coluna de Pedra / Deepslate Chiseled -->
-  <rect width="32" height="64" fill="#0c0a14" />
+  <!-- Pilar de Pedra Entalhada Minecraft (Chiseled Deepslate / Blackstone Pillar) -->
+  <rect width="32" height="64" fill="#0e0d16" />
   
-  <!-- Linhas verticais da coluna -->
-  <rect x="0" y="0" width="3" height="64" fill="#050408" />
-  <rect x="29" y="0" width="3" height="64" fill="#050408" />
+  <!-- Borda externa profunda -->
+  <rect x="0" y="0" width="3" height="64" fill="#040306" />
+  <rect x="29" y="0" width="3" height="64" fill="#040306" />
   
-  <!-- Highlight vertical -->
-  <rect x="3" y="0" width="2" height="64" fill="#1e1a2e" />
+  <!-- Linhas de relevo verticais da coluna chanfrada -->
+  <rect x="3" y="0" width="3" height="64" fill="#201d2e" />
+  <rect x="26" y="0" width="3" height="64" fill="#08070d" />
   
-  <!-- Seções horizontais do pilar -->
-  <rect x="0" y="0" width="32" height="3" fill="#050408" />
-  <rect x="0" y="32" width="32" height="3" fill="#050408" />
+  <!-- Junta de bloco horizontal a cada 32px -->
+  <rect x="0" y="0" width="32" height="2" fill="#040306" />
+  <rect x="0" y="32" width="32" height="2" fill="#040306" />
+  <rect x="3" y="2" width="26" height="2" fill="#201d2e" />
+  <rect x="3" y="34" width="26" height="2" fill="#201d2e" />
+  <rect x="3" y="30" width="26" height="2" fill="#08070d" />
+  <rect x="3" y="62" width="26" height="2" fill="#08070d" />
   
-  <!-- Brilho no topo dos blocos do pilar -->
-  <rect x="3" y="3" width="26" height="2" fill="#1e1a2e" />
-  <rect x="3" y="35" width="26" height="2" fill="#1e1a2e" />
+  <!-- Bloco Central Entalhado (Chiseled Pattern) -->
+  <!-- Seção Superior (0 a 32px) -->
+  <rect x="8" y="6" width="16" height="20" fill="#13111e" />
+  <rect x="8" y="6" width="16" height="2" fill="#252236" />
+  <rect x="8" y="6" width="2" height="20" fill="#252236" />
+  <rect x="8" y="24" width="16" height="2" fill="#06050a" />
+  <rect x="22" y="6" width="2" height="20" fill="#06050a" />
+  <rect x="12" y="10" width="8" height="12" fill="#090810" />
+  <rect x="14" y="12" width="4" height="8" fill="#1b1828" />
   
-  <!-- Runas / Textura interna esculpida -->
-  <rect x="8" y="10" width="16" height="14" fill="#141122" />
-  <rect x="12" y="14" width="8" height="6" fill="#0a0812" />
-  
-  <rect x="8" y="42" width="16" height="14" fill="#141122" />
-  <rect x="12" y="46" width="8" height="6" fill="#0a0812" />
-  
-  <!-- Veios de Sculk / Obsidiana brilhando na lateral -->
-  <rect x="14" y="16" width="4" height="2" fill="#00c9a7" opacity="0.8" />
-  <rect x="14" y="48" width="4" height="2" fill="#9d50db" opacity="0.8" />
+  <!-- Seção Inferior (32 a 64px) -->
+  <rect x="8" y="38" width="16" height="20" fill="#13111e" />
+  <rect x="8" y="38" width="16" height="2" fill="#252236" />
+  <rect x="8" y="38" width="2" height="20" fill="#252236" />
+  <rect x="8" y="56" width="16" height="2" fill="#06050a" />
+  <rect x="22" y="38" width="2" height="20" fill="#06050a" />
+  <rect x="12" y="42" width="8" height="12" fill="#090810" />
+  <rect x="14" y="44" width="4" height="8" fill="#1b1828" />
 </svg>

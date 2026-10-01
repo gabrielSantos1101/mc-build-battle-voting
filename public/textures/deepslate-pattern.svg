@@ -1,42 +1,30 @@
 <svg xmlns="http://www.w3.org/2000/svg" width="64" height="64" viewBox="0 0 64 64" shape-rendering="crispEdges">
-  <!-- Fundo base Deepslate Escuro -->
-  <rect width="64" height="64" fill="#0d0c14" />
+  <!-- Fundo base Deepslate Escuro e Suave (Sem ruído de cores neon) -->
+  <rect width="64" height="64" fill="#0c0b12" />
   
-  <!-- Blocos de Deepslate Bricks chanfrados -->
-  <!-- Linhas horizontais de argamassa -->
-  <rect x="0" y="0" width="64" height="2" fill="#08070d" />
-  <rect x="0" y="32" width="64" height="2" fill="#08070d" />
-  <rect x="0" y="62" width="64" height="2" fill="#08070d" />
+  <!-- Linhas de argamassa entre os tijolos de Deepslate (Tiled 32x16 / 64x32) -->
+  <rect x="0" y="0" width="64" height="2" fill="#06050a" />
+  <rect x="0" y="32" width="64" height="2" fill="#06050a" />
   
-  <!-- Linhas verticais -->
-  <rect x="0" y="0" width="2" height="32" fill="#08070d" />
-  <rect x="32" y="32" width="2" height="32" fill="#08070d" />
-  <rect x="62" y="0" width="2" height="32" fill="#08070d" />
+  <rect x="0" y="0" width="2" height="32" fill="#06050a" />
+  <rect x="32" y="32" width="2" height="32" fill="#06050a" />
   
-  <!-- Relevo dos blocos (Top/Left highlight) -->
-  <rect x="2" y="2" width="60" height="2" fill="#181624" />
-  <rect x="2" y="2" width="2" height="28" fill="#181624" />
-  <rect x="2" y="34" width="28" height="2" fill="#181624" />
-  <rect x="2" y="34" width="2" height="26" fill="#181624" />
-  <rect x="34" y="34" width="28" height="2" fill="#181624" />
-  <rect x="34" y="34" width="2" height="26" fill="#181624" />
+  <!-- Chanfro sutil de iluminação superior dos blocos de ardósia -->
+  <rect x="2" y="2" width="62" height="2" fill="#151320" />
+  <rect x="2" y="34" width="28" height="2" fill="#151320" />
+  <rect x="34" y="34" width="30" height="2" fill="#151320" />
   
-  <!-- Detalhes de textura de ardósia -->
-  <rect x="8" y="10" width="8" height="4" fill="#14121f" />
-  <rect x="20" y="16" width="12" height="3" fill="#14121f" />
-  <rect x="42" y="8" width="14" height="4" fill="#14121f" />
-  <rect x="10" y="44" width="16" height="4" fill="#14121f" />
-  <rect x="44" y="48" width="10" height="3" fill="#14121f" />
+  <!-- Chanfro sutil de sombra inferior dos blocos -->
+  <rect x="2" y="30" width="62" height="2" fill="#08070d" />
+  <rect x="2" y="62" width="28" height="2" fill="#08070d" />
+  <rect x="34" y="62" width="30" height="2" fill="#08070d" />
   
-  <!-- Partículas de Crying Obsidian (Roxo Místico) -->
-  <rect x="14" y="22" width="2" height="2" fill="#7928ca" opacity="0.7" />
-  <rect x="16" y="22" width="2" height="4" fill="#9d50db" opacity="0.8" />
-  <rect x="50" y="14" width="3" height="3" fill="#9d50db" opacity="0.6" />
-  <rect x="24" y="52" width="2" height="3" fill="#7928ca" opacity="0.7" />
-  
-  <!-- Partículas de Sculk (Turquesa Bioluminescente) -->
-  <rect x="48" y="24" width="2" height="2" fill="#00c9a7" opacity="0.8" />
-  <rect x="4" y="18" width="2" height="2" fill="#00e5ff" opacity="0.6" />
-  <rect x="38" y="42" width="2" height="2" fill="#00c9a7" opacity="0.7" />
-  <rect x="58" y="56" width="2" height="2" fill="#00e5ff" opacity="0.8" />
+  <!-- Textura sutil pixel-art de pedra/ardósia polida -->
+  <rect x="8" y="8" width="12" height="4" fill="#100f1a" />
+  <rect x="24" y="16" width="16" height="4" fill="#100f1a" />
+  <rect x="46" y="10" width="12" height="6" fill="#100f1a" />
+  <rect x="6" y="40" width="14" height="6" fill="#100f1a" />
+  <rect x="38" y="44" width="18" height="4" fill="#100f1a" />
+  <rect x="22" y="52" width="8" height="4" fill="#100f1a" />
+  <rect x="54" y="52" width="8" height="4" fill="#100f1a" />
 </svg>
