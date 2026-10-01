@@ -102,21 +102,10 @@ function PodiumCard({
         )}
       </div>
 
-      {/* 3D Skin */}
+      {/* 3D Skin - Floating animated skin */}
       {skinUrl && (
-        <div className="mb-2">
-          <div style={{
-            width: 80,
-            height: 80,
-            margin: '0 auto',
-            background: '#0a0a0a',
-            border: `2px solid ${accent}`,
-            borderRadius: '4px',
-            overflow: 'hidden',
-            boxShadow: `0 0 16px ${accent}66, inset 0 0 12px ${accent}33`
-          }}>
-            <PlayerSkin3D skinUrl={skinUrl} size={160} animation="wave" autoRotateSpeed={0.1} />
-          </div>
+        <div className="mb-4" style={{ display: 'flex', justifyContent: 'center' }}>
+          <PlayerSkin3D skinUrl={skinUrl} size={220} />
         </div>
       )}
 

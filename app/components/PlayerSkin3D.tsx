@@ -8,7 +8,7 @@ interface PlayerSkin3DProps {
 
 export function PlayerSkin3D({ 
   skinUrl, 
-  size = 256
+  size = 280
 }: PlayerSkin3DProps) {
   const containerRef = useRef<HTMLDivElement>(null)
   const [skinLoaded, setSkinLoaded] = useState(false)
@@ -36,7 +36,7 @@ export function PlayerSkin3D({
         style={{ 
           width: size, 
           height: size, 
-          background: '#0a0a0a',
+          background: 'transparent',
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'center',
@@ -58,13 +58,13 @@ export function PlayerSkin3D({
       <ReactSkinview3d
         skinUrl={skinUrl}
         autoRotate={true}
-        autoRotateSpeed={0.3}
+        autoRotateSpeed={0.4}
         width={size}
         height={size}
         style={{ width: size, height: size }}
         options={{ 
-          backgroundColor: 0x000000, 
-          backgroundAlpha: 0 
+          backgroundAlpha: 0,
+          backgroundColor: 0x000000
         }}
       />
     </div>
