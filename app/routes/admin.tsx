@@ -14,6 +14,24 @@ export const Route = createFileRoute()({
 const ADMIN_EMAIL = 'admin@email.com'
 const DEFAULT_PASSWORD = 'GiodLgQjH7w'
 
+// Helper to fetch skin URL from Mojang API
+async function fetchSkinUrl(nick: string): Promise<string | null> {
+  try {
+    const uuidRes = await fetch(`https://api.mojang.com/users/profiles/minecraft/${nick}`)
+    if (!uuidRes.ok) return null
+    const { id: uuid } = await uuidRes.json()
+    
+    const profileRes = await fetch(`https://sessionserver.mojang.com/session/minecraft/profile/${uuid}`)
+    if (!profileRes.ok) return null
+    const profile = await profileRes.json()
+    
+    const textures = JSON.parse(atob(profile.properties[0].value))
+    return textures.textures.SKIN.url
+  } catch {
+    return null
+  }
+}
+
 const THEMES: { id: FrameTheme; name: string; icon: string }[] = [
   { id: 'jack-pumpkin', name: 'Jack-o-Lantern', icon: '🎃' },
   { id: 'warden-sculk', name: 'Deep Dark / Warden', icon: '💙' },
@@ -411,10 +429,14 @@ function AdminPage() {
       return
     }
 
+    // Fetch skin URL from Mojang
+    const skinUrl = await fetchSkinUrl(playerNick.trim())
+    
     const { error } = await supabase.from('competitors').insert({
       round_id: currentRound.id,
       player_nick: playerNick.trim(),
       image_url: finalImageUrl,
+      skin_url: skinUrl,
       frame_theme: selectedTheme,
     })
 
@@ -519,12 +541,19 @@ function AdminPage() {
       return
     }
 
+    // Fetch skin URL if nick changed
+    let skinUrl = editingCompetitor.skin_url
+    if (editNick.trim() !== editingCompetitor.player_nick) {
+      skinUrl = await fetchSkinUrl(editNick.trim())
+    }
+    
     const { error: updateErr } = await supabase
       .from('competitors')
       .update({
         player_nick: editNick.trim(),
         frame_theme: editTheme,
         image_url: finalImageUrl,
+        skin_url: skinUrl,
       })
       .eq('id', editingCompetitor.id)
 
