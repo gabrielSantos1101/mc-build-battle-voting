@@ -1,7 +1,7 @@
 import { createFileRoute } from '@tanstack/react-router'
 import React, { useEffect, useRef, useState } from 'react'
 import { motion } from 'framer-motion'
-import { X, Clock } from 'lucide-react'
+import { X, Clock, AlertCircle } from 'lucide-react'
 import {
   supabase,
   getDeviceId,
@@ -10,8 +10,11 @@ import {
   computeVoteStats,
   getRemainingSeconds,
   formatTimeMMSS,
+  initializeAuth,
+  canVote,
+  getAuthPayload,
 } from '~/lib/supabase'
-import type { Round, Competitor, Vote, CompetitorWithVotes, FrameTheme } from '~/lib/supabase'
+import type { Round, Competitor, Vote, CompetitorWithVotes, FrameTheme, IPInfo } from '~/lib/supabase'
 import { MinecraftHorrorFrame, FRAME_CONFIGS } from '~/components/MinecraftHorrorFrame'
 import { PlayerHead, VoteBar } from '~/components/ui'
 
@@ -438,88 +441,71 @@ function VotingPage() {
 
         {/* Centro do Site (Header, Cards e Conteúdo) */}
         <div className="flex-1 flex flex-col min-w-0">
-          {/* HEADER MODULAR DE MADEIRA COM TIMER DINÂMICO BASEADO EM TIMESTAMP */}
+          {/* HEADER COM A VIGA DE MADEIRA E PÍLULA INTEGRADA CONFORME MOCKUP */}
           <header
-            className="w-full relative z-20 shadow-2xl border-b-4 border-[#180c04]"
+            className="w-full relative z-20 shadow-2xl border-t-2 border-[#7a3f1a] border-b-4 border-[#120702]"
             style={{
               backgroundImage: 'url(/textures/wood-header-pattern.svg)',
               backgroundRepeat: 'repeat',
               backgroundSize: '64px 64px',
+              boxShadow: 'inset 0 2px 0 #8f4d22, inset 0 -2px 0 #241005, 0 8px 24px rgba(0,0,0,0.9)',
             }}
           >
-            {/* Faixa decorativa de pedra no topo */}
-            <div
-              className="w-full h-2"
-              style={{
-                backgroundImage: 'url(/textures/stone-border-h.svg)',
-                backgroundRepeat: 'repeat-x',
-                backgroundSize: '64px 8px',
-              }}
-            />
-
-            <div className="max-w-5xl mx-auto px-4 py-3 flex flex-wrap items-center justify-between gap-4">
-              {/* Placa de Madeira Chanfrada (Título) */}
-              <div
-                className="px-5 py-2.5 rounded border-4 shadow-2xl flex-1 min-w-[280px]"
-                style={{
-                  background: 'linear-gradient(180deg, #4d280e 0%, #2e1605 100%)',
-                  borderColor: '#7a4218 #1f0d03 #1f0d03 #7a4218',
-                  boxShadow: 'inset 2px 2px 0 #9c5825, inset -2px -2px 0 #120701, 0 6px 16px rgba(0,0,0,0.8)',
-                }}
-              >
+            <div className="max-w-[1400px] mx-auto px-4 sm:px-6 py-3 flex items-center justify-between gap-4 flex-wrap">
+              {/* Título com Relevo Voxel 3D e Brilho Dourado */}
+              <div className="flex items-center gap-3">
                 <h1
-                  className="text-xs sm:text-sm md:text-base text-[#ffaa00] tracking-wider"
+                  className="text-xs sm:text-sm md:text-base lg:text-lg tracking-wider select-none font-bold"
                   style={{
-                    textShadow: '2px 2px 0 #000, 4px 4px 0 #2b1303',
+                    color: '#ffaa00',
+                    textShadow: '0 3px 0 #3d1400, 0 4px 0 #120500, 0 0 16px rgba(255,140,0,0.5), 2px 2px 0 #000',
                   }}
                 >
                   BUILD BATTLE: HALLOWEEN EDITION
                 </h1>
-                {round && (
-                  <div className="text-[7px] text-[#ff9a3c] mt-1 opacity-90 truncate max-w-sm">
+                {round?.title && (
+                  <span className="hidden xl:inline-block text-[8px] text-[#ff9a3c] opacity-80 border-l border-[#ff9a3c44] pl-3">
                     {round.title}
-                  </div>
+                  </span>
                 )}
               </div>
 
-              {/* Caixa Entalhada com o Timer Dinâmico / Status da Votação */}
+              {/* Pílula Entalhada Integrada na Madeira (Timer / Status) */}
               <div
-                className="px-4 py-2.5 rounded border-4 flex items-center gap-3 shadow-2xl"
+                className="px-4 py-1.5 rounded-full flex items-center gap-2.5 border select-none shrink-0"
                 style={{
-                  background: '#0d0a14',
-                  borderColor: '#3c200e #180b03 #180b03 #3c200e',
-                  boxShadow: 'inset 2px 2px 0 #24140a, 0 4px 12px rgba(0,0,0,0.8)',
+                  background: '#190d05',
+                  borderColor: '#381c0b',
+                  boxShadow: 'inset 2px 2px 4px rgba(0,0,0,0.85), inset -1px -1px 0 #522710',
                 }}
               >
-                <Clock size={16} className="text-[#ff9a3c] animate-pulse" />
-                <div>
-                  <div className="text-[7px] text-[#888] mb-0.5">
-                    {round?.ends_at ? 'VOTING ENDS IN:' : 'STATUS:'}
-                  </div>
-                  <div className="text-[11px] text-[#ffaa00] tracking-wider">
-                    {round?.ends_at && round.status === 'active' ? (
-                      <span className={remainingSeconds <= 30 ? 'text-[#ff4444] animate-ping' : 'text-[#ffcc00]'}>
-                        {formatTimeMMSS(remainingSeconds)}
-                      </span>
-                    ) : round?.status === 'active' ? (
-                      <span className="text-[#00ff88]">VOTAÇÃO ABERTA</span>
-                    ) : (
-                      <span className="text-[#ff9a3c] uppercase">{round?.status || 'FECHADA'}</span>
-                    )}
-                  </div>
-                </div>
+                <span
+                  className="text-[8px] sm:text-[9px] text-[#dcd7cb] tracking-wider font-normal"
+                  style={{ textShadow: '1px 1px 0 #000' }}
+                >
+                  {round?.status === 'draft' ? 'STATUS:' : round?.ends_at && round.status === 'active' ? 'VOTING ENDS IN:' : 'STATUS:'}
+                </span>
+
+                <span
+                  className="text-[10px] sm:text-[11px] font-bold tracking-wider"
+                  style={{ textShadow: '0 0 8px rgba(255,170,0,0.7), 1px 1px 0 #000' }}
+                >
+                  {round?.status === 'draft' ? (
+                    <span className="text-[#ff9a3c]">EM BREVE</span>
+                  ) : round?.status === 'paused' ? (
+                    <span className="text-[#ff5555]">PAUSADA</span>
+                  ) : round?.status === 'finished' ? (
+                    <span className="text-[#ffcc00]">ENCERRADA</span>
+                  ) : round?.ends_at && round.status === 'active' ? (
+                    <span className={remainingSeconds <= 30 ? 'text-[#ff3333] animate-pulse' : 'text-[#ffaa00]'}>
+                      {formatTimeMMSS(remainingSeconds)}
+                    </span>
+                  ) : (
+                    <span className="text-[#00ff88]">ABERTA</span>
+                  )}
+                </span>
               </div>
             </div>
-
-            {/* Borda chanfrada inferior do Header */}
-            <div
-              className="w-full h-3"
-              style={{
-                backgroundImage: 'url(/textures/stone-border-h.svg)',
-                backgroundRepeat: 'repeat-x',
-                backgroundSize: '64px 12px',
-              }}
-            />
           </header>
 
           {/* CONTEÚDO PRINCIPAL COM SCROLL LIVRE */}
