@@ -33,10 +33,15 @@ export function PlayerSkin3D({
         
         const { SkinViewer } = m
         
-        // Ensure canvas has proper dimensions
+        // Ensure canvas has proper dimensions BEFORE creating viewer
         const canvas = canvasRef.current!
         canvas.width = size
         canvas.height = size
+        canvas.style.width = `${size}px`
+        canvas.style.height = `${size}px`
+        
+        // Force a layout recalculation
+        canvas.getContext('2d')
         
         const viewer = new m.SkinViewer({
           canvas: canvas,
@@ -70,7 +75,7 @@ export function PlayerSkin3D({
       width={size} 
       height={size} 
       className="w-full h-full image-rendering-pixelated"
-      style={{ imageRendering: 'pixelated', background: '#0a0a0a' }}
+      style={{ imageRendering: 'pixelated', background: '#0a0a0a', width: `${size}px`, height: `${size}px` }}
     />
   )
 }
