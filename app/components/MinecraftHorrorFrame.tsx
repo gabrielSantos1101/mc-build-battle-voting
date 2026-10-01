@@ -19,7 +19,7 @@ interface FrameConfig {
 export const FRAME_CONFIGS: Record<FrameTheme, FrameConfig> = {
   'warden-sculk': {
     label: 'Deep Dark / Warden',
-    image: '/frames/Warden-frame.jpg',
+    image: '/frames/Warden-frame.webp',
     borderColor: '#00c9a7',
     glowColor: 'rgba(0, 201, 167, 0.6)',
     accentColor: '#00e5ff',
@@ -27,7 +27,7 @@ export const FRAME_CONFIGS: Record<FrameTheme, FrameConfig> = {
   },
   'pale-garden': {
     label: 'Pale Garden / Creaking',
-    image: '/frames/Pale-garden-frame.jpg',
+    image: '/frames/Pale-garden-frame.webp',
     borderColor: '#c8c8b0',
     glowColor: 'rgba(255, 140, 0, 0.6)',
     accentColor: '#ff8c00',
@@ -35,7 +35,7 @@ export const FRAME_CONFIGS: Record<FrameTheme, FrameConfig> = {
   },
   'jack-pumpkin': {
     label: 'Jack-o-Lantern & Soul Fire',
-    image: '/frames/Jack-o-Lanter-frame.jpg',
+    image: '/frames/Jack-o-Lanter-frame.webp',
     borderColor: '#ff7800',
     glowColor: 'rgba(255, 120, 0, 0.6)',
     accentColor: '#00e5ff',
@@ -43,7 +43,7 @@ export const FRAME_CONFIGS: Record<FrameTheme, FrameConfig> = {
   },
   'wither': {
     label: 'Wither Boss',
-    image: '/frames/Wither-boss-frame.jpg',
+    image: '/frames/Wither-boss-frame.webp',
     borderColor: '#a0a0ff',
     glowColor: 'rgba(160, 160, 255, 0.6)',
     accentColor: '#ffd700',
@@ -51,7 +51,7 @@ export const FRAME_CONFIGS: Record<FrameTheme, FrameConfig> = {
   },
   'ender-dragon': {
     label: 'Ender Dragon',
-    image: '/frames/Ender-dragon-frame.jpg',
+    image: '/frames/Ender-dragon-frame.webp',
     borderColor: '#9d50db',
     glowColor: 'rgba(157, 80, 219, 0.6)',
     accentColor: '#d2a8ff',
