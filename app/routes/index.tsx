@@ -280,6 +280,8 @@ function VotingPage() {
   const [zoomedCompetitor, setZoomedCompetitor] = useState<CompetitorWithVotes | null>(null)
   const [error, setError] = useState<string | null>(null)
   const [remainingSeconds, setRemainingSeconds] = useState<number>(0)
+  const [ipInfo, setIpInfo] = useState<IPInfo | null>(null)
+  const [authReady, setAuthReady] = useState(false)
   const deviceId = useRef(getDeviceId())
 
   // Sincronização do Timer em Tempo Real com o Relógio do Sistema
@@ -298,6 +300,20 @@ function VotingPage() {
     const interval = setInterval(updateTimer, 1000)
     return () => clearInterval(interval)
   }, [round?.ends_at])
+
+  // Initialize auth (JWT + IP) on mount
+  useEffect(() => {
+    async function initAuth() {
+      try {
+        const auth = await initializeAuth()
+        setIpInfo(auth.ipInfo)
+        setAuthReady(true)
+      } catch {
+        setAuthReady(true)
+      }
+    }
+    initAuth()
+  }, [])
 
   useEffect(() => {
     async function loadActiveRound() {
@@ -376,19 +392,38 @@ function VotingPage() {
   }, [round?.id])
 
   async function handleVote(competitorId: string) {
-    if (!round || hasVoted) return
+    if (!round || hasVoted || !authReady) return
     setError(null)
+
+    const { canVote: allowed, reason } = await canVote(round.id)
+    if (!allowed) {
+      if (reason === 'device') {
+        setHasVoted(true)
+        markVotedInRound(round.id)
+        setError('Você já votou nesta rodada neste dispositivo.')
+      } else if (reason === 'ip') {
+        setHasVoted(true)
+        markVotedInRound(round.id)
+        setError('Este IP já votou nesta rodada.')
+      }
+      return
+    }
 
     const { error: voteErr } = await supabase.from('votes').insert({
       round_id: round.id,
       competitor_id: competitorId,
       device_id: deviceId.current,
+      ip: ipInfo?.ip || 'unknown',
+      country: ipInfo?.country,
+      region: ipInfo?.region,
+      city: ipInfo?.city,
     })
 
     if (voteErr) {
       if (voteErr.code === '23505') {
         setHasVoted(true)
         markVotedInRound(round.id)
+        setError(voteErr.message?.includes('ip') ? 'Este IP já votou nesta rodada.' : 'Você já votou nesta rodada.')
       } else {
         setError('Erro ao enviar voto. Tente novamente.')
       }
@@ -472,38 +507,44 @@ function VotingPage() {
 
               {/* Pílula Entalhada Integrada na Madeira (Timer / Status) */}
               <div
-                className="px-4 py-1.5 rounded-full flex items-center gap-2.5 border select-none shrink-0"
+                className="px-4 py-1.5 rounded-full flex items-center gap-2 border select-none shrink-0"
                 style={{
                   background: '#190d05',
                   borderColor: '#381c0b',
                   boxShadow: 'inset 2px 2px 4px rgba(0,0,0,0.85), inset -1px -1px 0 #522710',
                 }}
               >
-                <span
-                  className="text-[8px] sm:text-[9px] text-[#dcd7cb] tracking-wider font-normal"
-                  style={{ textShadow: '1px 1px 0 #000' }}
-                >
-                  {round?.status === 'draft' ? 'STATUS:' : round?.ends_at && round.status === 'active' ? 'VOTING ENDS IN:' : 'STATUS:'}
-                </span>
-
-                <span
-                  className="text-[10px] sm:text-[11px] font-bold tracking-wider"
-                  style={{ textShadow: '0 0 8px rgba(255,170,0,0.7), 1px 1px 0 #000' }}
-                >
-                  {round?.status === 'draft' ? (
-                    <span className="text-[#ff9a3c]">EM BREVE</span>
-                  ) : round?.status === 'paused' ? (
-                    <span className="text-[#ff5555]">PAUSADA</span>
-                  ) : round?.status === 'finished' ? (
-                    <span className="text-[#ffcc00]">ENCERRADA</span>
-                  ) : round?.ends_at && round.status === 'active' ? (
-                    <span className={remainingSeconds <= 30 ? 'text-[#ff3333] animate-pulse' : 'text-[#ffaa00]'}>
+                {round?.status === 'paused' ? (
+                  <span className="text-[9px] sm:text-[10px] text-[#ff5555] font-bold tracking-wider" style={{ textShadow: '0 0 8px rgba(255,85,85,0.6), 1px 1px 0 #000' }}>
+                    ⏸ VOTAÇÃO PAUSADA
+                  </span>
+                ) : round?.status === 'finished' ? (
+                  <span className="text-[9px] sm:text-[10px] text-[#ffaa00] font-bold tracking-wider" style={{ textShadow: '0 0 8px rgba(255,170,0,0.6), 1px 1px 0 #000' }}>
+                    🏆 VOTAÇÃO ENCERRADA
+                  </span>
+                ) : round?.status === 'draft' ? (
+                  <span className="text-[9px] sm:text-[10px] text-[#ff9a3c] font-bold tracking-wider" style={{ textShadow: '0 0 8px rgba(255,154,60,0.6), 1px 1px 0 #000' }}>
+                    ⏳ AGUARDANDO ABERTURA
+                  </span>
+                ) : round?.ends_at ? (
+                  <div className="flex items-center gap-2">
+                    <span className="text-[8px] sm:text-[9px] text-[#dcd7cb] tracking-wider" style={{ textShadow: '1px 1px 0 #000' }}>
+                      VOTAÇÃO TERMINA EM:
+                    </span>
+                    <span
+                      className={`text-[10px] sm:text-[11px] font-bold tracking-wider ${
+                        remainingSeconds <= 30 ? 'text-[#ff3333] animate-pulse' : 'text-[#ffaa00]'
+                      }`}
+                      style={{ textShadow: '0 0 8px rgba(255,170,0,0.7), 1px 1px 0 #000' }}
+                    >
                       {formatTimeMMSS(remainingSeconds)}
                     </span>
-                  ) : (
-                    <span className="text-[#00ff88]">ABERTA</span>
-                  )}
-                </span>
+                  </div>
+                ) : (
+                  <span className="text-[9px] sm:text-[10px] text-[#00ff88] font-bold tracking-wider" style={{ textShadow: '0 0 8px rgba(0,255,136,0.6), 1px 1px 0 #000' }}>
+                    ● VOTAÇÃO ABERTA
+                  </span>
+                )}
               </div>
             </div>
           </header>
@@ -588,32 +629,30 @@ function VotingPage() {
 
       {/* FOOTER NÃO FIXO (ACOMPANHA O SCROLL NO FIM DA PÁGINA) */}
       <footer
-        className="w-full mt-12 border-t-4 border-[#180c04] relative z-20"
+        className="w-full mt-12 relative z-20 border-t-2 border-[#7a3f1a]"
         style={{
           backgroundImage: 'url(/textures/wood-header-pattern.svg)',
           backgroundRepeat: 'repeat',
           backgroundSize: '64px 64px',
+          boxShadow: 'inset 0 2px 0 #8f4d22, 0 -6px 20px rgba(0,0,0,0.8)',
         }}
       >
-        <div
-          className="w-full h-2"
-          style={{
-            backgroundImage: 'url(/textures/stone-border-h.svg)',
-            backgroundRepeat: 'repeat-x',
-            backgroundSize: '64px 8px',
-          }}
-        />
-
-        <div className="max-w-5xl mx-auto px-4 py-6 text-center">
-          <div className="text-[9px] text-[#ff9a3c] mb-2">
+        <div className="max-w-5xl mx-auto px-4 py-5 text-center">
+          <div className="text-[9px] text-[#ffaa00] mb-2 tracking-wider" style={{ textShadow: '1px 1px 0 #000' }}>
             🎃 MINECRAFT BUILD BATTLE • LIVE STREAM VOTING
           </div>
-          <div className="text-[7px] text-[#888] flex items-center justify-center gap-4 flex-wrap">
+          <div className="text-[7px] text-[#aaa] flex items-center justify-center gap-4 flex-wrap">
             <span>Anti-fraude: 1 voto por dispositivo</span>
+            {ipInfo && (
+              <>
+                <span>•</span>
+                <span className="text-[#00c9a7]">{ipInfo.ip}</span>
+              </>
+            )}
             <span>•</span>
             <a
               href="/admin"
-              className="text-[#ffcc00] hover:underline"
+              className="text-[#ff9a3c] hover:text-[#ffcc00] hover:underline"
               target="_blank"
               rel="noreferrer"
             >
