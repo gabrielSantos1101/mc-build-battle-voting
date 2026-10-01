@@ -18,43 +18,43 @@ interface FrameConfig {
 export const FRAME_CONFIGS: Record<FrameTheme, FrameConfig> = {
   'warden-sculk': {
     label: 'Deep Dark / Warden',
-    image: '/frames/warden-sculk-cropped.png',
+    image: '/frames/warden-sculk-transparent.png',
     borderColor: '#00c9a7',
     glowColor: 'rgba(0, 201, 167, 0.4)',
     accentColor: '#00e5ff',
-    outset: { top: '-24px', bottom: '-20px', x: '-16px' },
+    outset: { top: '-18px', bottom: '-16px', x: '-14px' },
   },
   'pale-garden': {
     label: 'Pale Garden / Creaking',
-    image: '/frames/pale-garden.jpg',
+    image: '/frames/pale-garden-transparent.png',
     borderColor: '#8c8c79',
     glowColor: 'rgba(255, 140, 0, 0.4)',
     accentColor: '#ff8c00',
-    outset: { top: '-20px', bottom: '-20px', x: '-18px' },
+    outset: { top: '-16px', bottom: '-16px', x: '-14px' },
   },
   'jack-pumpkin': {
     label: 'Jack-o-Lantern & Soul Fire',
-    image: '/frames/jack-pumpkin.jpg',
+    image: '/frames/jack-pumpkin-transparent.png',
     borderColor: '#ff7800',
     glowColor: 'rgba(255, 120, 0, 0.4)',
     accentColor: '#00e5ff',
-    outset: { top: '-24px', bottom: '-20px', x: '-18px' },
+    outset: { top: '-18px', bottom: '-16px', x: '-14px' },
   },
   'wither': {
     label: 'Wither Boss',
-    image: '/frames/wither.jpg',
+    image: '/frames/wither-transparent.png',
     borderColor: '#555555',
     glowColor: 'rgba(160, 160, 255, 0.4)',
     accentColor: '#ffd700',
-    outset: { top: '-24px', bottom: '-22px', x: '-16px' },
+    outset: { top: '-18px', bottom: '-18px', x: '-14px' },
   },
   'ender-dragon': {
     label: 'Ender Dragon',
-    image: '/frames/ender-dragon.jpg',
+    image: '/frames/ender-dragon-transparent.png',
     borderColor: '#7928ca',
     glowColor: 'rgba(157, 80, 219, 0.4)',
     accentColor: '#d2a8ff',
-    outset: { top: '-26px', bottom: '-22px', x: '-16px' },
+    outset: { top: '-20px', bottom: '-18px', x: '-14px' },
   },
 }
 
@@ -78,26 +78,26 @@ export function MinecraftHorrorFrame({
   return (
     <div
       onClick={onClick}
-      className={`relative select-none transition-transform duration-200 hover:-translate-y-1.5 cursor-pointer my-4 ${className}`}
+      className={`relative select-none transition-transform duration-200 hover:-translate-y-1.5 cursor-pointer my-3 ${className}`}
       style={{
         filter: selected
-          ? `drop-shadow(0 0 25px ${config.glowColor})`
+          ? `drop-shadow(0 0 20px ${config.glowColor})`
           : 'drop-shadow(0 8px 20px rgba(0,0,0,0.85))',
       }}
     >
-      {/* 1. CORPO INTERNO DO CARD - Contém 100% do conteúdo com segurança */}
+      {/* 1. CORPO INTERNO DO CARD - Fundo sólido de Deepslate com borda do tema */}
       <div
-        className="relative w-full rounded-sm p-3.5 flex flex-col justify-between z-10"
+        className="relative w-full rounded-sm p-4 flex flex-col justify-between z-10"
         style={{
-          background: 'linear-gradient(180deg, #0f0d1a 0%, #08070d 100%)',
-          border: `3px solid ${config.borderColor}`,
-          boxShadow: 'inset 0 0 20px rgba(0,0,0,0.95), 0 4px 15px rgba(0,0,0,0.8)',
+          background: 'linear-gradient(180deg, #100e1c 0%, #08070d 100%)',
+          border: `2px solid ${config.borderColor}66`,
+          boxShadow: 'inset 0 0 15px rgba(0,0,0,0.9), 0 4px 12px rgba(0,0,0,0.8)',
         }}
       >
         {children}
       </div>
 
-      {/* 2. MOLDURA PROJETADA PARA FORA (OVERLAY) - Fica por cima e expande para além do card */}
+      {/* 2. MOLDURA PROJETADA TRANSPARENTE (OVERLAY) */}
       <div
         className="absolute pointer-events-none select-none z-20"
         style={{
@@ -113,8 +113,6 @@ export function MinecraftHorrorFrame({
           className="w-full h-full object-fill pointer-events-none"
           style={{
             imageRendering: 'pixelated',
-            // Suave máscara central para que o conteúdo interno brilhe com clareza
-            filter: 'contrast(1.05)',
           }}
         />
       </div>
