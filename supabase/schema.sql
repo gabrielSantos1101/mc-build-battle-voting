@@ -10,11 +10,13 @@ create table if not exists public.rounds (
   status text not null default 'draft', -- draft | active | paused | finished
   show_live_results boolean not null default true,
   countdown_seconds integer null,
+  starts_at timestamptz null, -- Timestamp exato de início da votação
   ends_at timestamptz null, -- Timestamp exato de encerramento da rodada
   created_at timestamptz not null default now()
 );
 
--- Garantir coluna ends_at caso a tabela já exista
+-- Garantir colunas de tempo caso a tabela já exista
+alter table public.rounds add column if not exists starts_at timestamptz null;
 alter table public.rounds add column if not exists ends_at timestamptz null;
 
 -- 2. Tabela de Competidores da rodada

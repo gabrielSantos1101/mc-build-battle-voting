@@ -24,6 +24,7 @@ export interface Round {
   status: RoundStatus
   show_live_results: boolean
   countdown_seconds: number | null
+  starts_at: string | null
   ends_at: string | null
   created_at: string
 }
@@ -195,4 +196,66 @@ export function formatTimeMMSS(seconds: number): string {
     return `${hours.toString().padStart(2, '0')}:${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`
   }
   return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`
+}
+
+export type VotingTimeStatus = 'not_started' | 'active' | 'ended'
+
+/** Get voting time status based on starts_at and ends_at */
+export function getVotingTimeStatus(startsAt: string | null, endsAt: string | null): VotingTimeStatus {
+  const now = Date.now()
+  
+  if (startsAt) {
+    const startTime = new Date(startsAt).getTime()
+    if (!isNaN(startTime) && now < startTime) {
+      return 'not_started'
+    }
+  }
+  
+  if (endsAt) {
+    const endTime = new Date(endsAt).getTime()
+    if (!isNaN(endTime) && now >= endTime) {
+      return 'ended'
+    }
+  }
+  
+  return 'active'
+}
+
+/** Get seconds until voting starts (if not started yet) */
+export function getSecondsUntilStart(startsAt: string | null): number {
+  if (!startsAt) return 0
+  const startTime = new Date(startsAt).getTime()
+  if (isNaN(startTime)) return 0
+  const now = Date.now()
+  return Math.max(0, Math.floor((startTime - now) / 1000))
+}
+
+/** Check if voting is currently allowed based on time */
+export function canVoteByTime(startsAt: string | null, endsAt: string | null): boolean {
+  return getVotingTimeStatus(startsAt, endsAt) === 'active'
+}
+
+/** Get display text for voting time status */
+export function getVotingTimeStatusText(startsAt: string | null, endsAt: string | null): { label: string; variant: 'waiting' | 'active' | 'ended' } {
+  const status = getVotingTimeStatus(startsAt, endsAt)
+  
+  switch (status) {
+    case 'not_started': {
+      const seconds = getSecondsUntilStart(startsAt)
+      const hours = Math.floor(seconds / 3600)
+      const mins = Math.floor((seconds % 3600) / 60)
+      const secs = seconds % 60
+      let timeStr = ''
+      if (hours > 0) timeStr += `${hours}h `
+      if (mins > 0 || hours > 0) timeStr += `${mins}m `
+      timeStr += `${secs}s`
+      return { label: `Inicia em ${timeStr}`, variant: 'waiting' }
+    }
+    case 'active': {
+      const seconds = getRemainingSeconds(endsAt)
+      return { label: `Termina em ${formatTimeMMSS(seconds)}`, variant: 'active' }
+    }
+    case 'ended':
+      return { label: 'Encerrada', variant: 'ended' }
+  }
 }
