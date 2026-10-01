@@ -1,24 +1,16 @@
-import { useEffect, useRef, useState, Suspense, lazy } from 'react'
-
-const SkinViewer3D = lazy(() => import('skinview3d').then(m => ({ default: m.SkinViewer })))
+import { useEffect, useRef, useState } from 'react'
 
 interface PlayerSkin3DProps {
   skinUrl: string
   size?: number
-  animation?: 'idle' | 'wave' | 'walk' | 'spin' | 'pose'
-  autoRotate?: boolean
-  autoRotateSpeed?: number
 }
 
 export function PlayerSkin3D({ 
   skinUrl, 
-  size = 256, 
-  animation = 'wave',
-  autoRotate = true,
-  autoRotateSpeed = 0.3 
+  size = 256
 }: PlayerSkin3DProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null)
-  const [SkinViewer, setSkinViewer] = useState<any>(null)
+  const [viewer, setViewer] = useState<any>(null)
 
   useEffect(() => {
     console.log('[PlayerSkin3D] Effect triggered', { skinUrl, size })
@@ -39,27 +31,22 @@ export function PlayerSkin3D({
       import('skinview3d').then(m => {
         console.log('[PlayerSkin3D] SkinViewer module loaded', Object.keys(m))
         
-        const { SkinViewer, createAnimation } = m
+        const { SkinViewer } = m
         
-        const viewer = new SkinViewer({
-          canvas: canvasRef.current!,
+        // Ensure canvas has proper dimensions
+        const canvas = canvasRef.current!
+        canvas.width = size
+        canvas.height = size
+        
+        const viewer = new m.SkinViewer({
+          canvas: canvas,
           skin: skinUrl,
           autoRotate: true,
           autoRotateSpeed: 0.3,
         })
         console.log('[PlayerSkin3D] Viewer created')
         
-        // Try to add animation
-        try {
-          const anim = m.createAnimation('wave')
-          viewer.animations.add(anim)
-          viewer.animations.play('wave')
-          console.log('[PlayerSkin3D] Animation added and played')
-        } catch (e) {
-          console.warn('[PlayerSkin3D] Animation error:', e)
-        }
-        
-        setSkinViewer(viewer)
+        setViewer(viewer)
       }).catch(err => {
         console.error('[PlayerSkin3D] Error loading skinview3d:', err)
       })
@@ -70,22 +57,20 @@ export function PlayerSkin3D({
     img.crossOrigin = 'anonymous'
 
     return () => {
-      if (SkinViewer) {
+      if (viewer) {
         console.log('[PlayerSkin3D] Disposing viewer')
-        SkinViewer.dispose()
+        viewer.dispose()
       }
     }
-  }, [skinUrl])
+  }, [skinUrl, size])
 
   return (
-    <Suspense fallback={<canvas width={size} height={size} style={{ background: '#1a1a1a' }} />}>
-      <canvas 
-        ref={canvasRef} 
-        width={size} 
-        height={size} 
-        className="w-full h-full image-rendering-pixelated"
-        style={{ imageRendering: 'pixelated', background: '#0a0a0a' }}
-      />
-    </Suspense>
+    <canvas 
+      ref={canvasRef} 
+      width={size} 
+      height={size} 
+      className="w-full h-full image-rendering-pixelated"
+      style={{ imageRendering: 'pixelated', background: '#0a0a0a' }}
+    />
   )
 }
