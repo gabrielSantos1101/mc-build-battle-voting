@@ -1,0 +1,95 @@
+@import "tailwindcss";
+
+@theme {
+  --color-obsidian: #0e0d13;
+  --color-obsidian-light: #1a1825;
+  --color-pumpkin: #ff7800;
+  --color-pumpkin-light: #ff9a3c;
+  --color-nether-purple: #7928ca;
+  --color-nether-purple-light: #9d50db;
+  --color-soul-cyan: #00e5ff;
+  --color-soul-cyan-dim: #00b3cc;
+  --color-warden-teal: #00c9a7;
+  --color-pale-gray: #c8c8b8;
+  --color-pale-dark: #6e6e5c;
+  --color-wither-smoke: #2a2a2a;
+  --color-nether-star: #ffd700;
+}
+
+@layer base {
+  * {
+    box-sizing: border-box;
+  }
+  body {
+    background-color: var(--color-obsidian);
+    color: #e0e0e0;
+    font-family: 'Press Start 2P', 'Courier New', monospace;
+    margin: 0;
+    padding: 0;
+  }
+  
+  /* Minecraft pixel border style */
+  .mc-border {
+    border: 3px solid;
+    border-top-color: #fff4;
+    border-left-color: #fff3;
+    border-bottom-color: #0003;
+    border-right-color: #0003;
+    box-shadow: inset 2px 2px 0 #fff2, inset -2px -2px 0 #0002;
+  }
+
+  /* Minecraft button style */
+  .mc-btn {
+    position: relative;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 8px 16px;
+    cursor: pointer;
+    transition: all 0.1s;
+    border: none;
+    outline: none;
+    font-family: 'Press Start 2P', monospace;
+    font-size: 10px;
+    letter-spacing: 0.5px;
+    text-transform: uppercase;
+  }
+
+  .mc-btn:active {
+    transform: translateY(2px);
+    box-shadow: none !important;
+  }
+
+  /* Glow animations */
+  @keyframes sculk-pulse {
+    0%, 100% { box-shadow: 0 0 8px #00c9a740, 0 0 20px #00c9a720; }
+    50% { box-shadow: 0 0 16px #00c9a780, 0 0 40px #00c9a740; }
+  }
+
+  @keyframes pumpkin-glow {
+    0%, 100% { box-shadow: 0 0 8px #ff780040, 0 0 20px #ff780020; }
+    50% { box-shadow: 0 0 16px #ff780080, 0 0 40px #ff780040; }
+  }
+
+  @keyframes soul-flicker {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.8; }
+  }
+
+  @keyframes nether-pulse {
+    0%, 100% { box-shadow: 0 0 8px #7928ca40, 0 0 20px #7928ca20; }
+    50% { box-shadow: 0 0 16px #7928ca80, 0 0 40px #7928ca40; }
+  }
+
+  @keyframes pale-eyes {
+    0%, 90%, 100% { opacity: 0; }
+    92%, 98% { opacity: 1; }
+  }
+
+  .animate-sculk-pulse { animation: sculk-pulse 2s ease-in-out infinite; }
+  .animate-pumpkin-glow { animation: pumpkin-glow 1.5s ease-in-out infinite; }
+  .animate-soul-flicker { animation: soul-flicker 0.8s ease-in-out infinite; }
+  .animate-nether-pulse { animation: nether-pulse 2.5s ease-in-out infinite; }
+  .animate-pale-eyes { animation: pale-eyes 6s ease-in-out infinite; }
+  .animate-pale-eyes-delay { animation: pale-eyes 6s ease-in-out infinite 3s; }
+}
