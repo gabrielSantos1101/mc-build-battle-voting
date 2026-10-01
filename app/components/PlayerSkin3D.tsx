@@ -19,6 +19,7 @@ export function PlayerSkin3D({
 }: PlayerSkin3DProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null)
   const [SkinViewer, setSkinViewer] = useState<any>(null)
+  const [animationInstance, setAnimationInstance] = useState<any>(null)
 
   useEffect(() => {
     console.log('[PlayerSkin3D] Effect triggered', { skinUrl, size, animation })
@@ -27,27 +28,44 @@ export function PlayerSkin3D({
       return
     }
 
+    let viewer: any = null
+    let anim: any = null
+
     import('skinview3d').then(m => {
       console.log('[PlayerSkin3D] SkinViewer loaded, creating viewer')
-      const viewer = new m.SkinViewer({
+      const { SkinViewer, createAnimation } = m
+      
+      viewer = new SkinViewer({
         canvas: canvasRef.current!,
         skin: skinUrl,
-        animation,
         autoRotate: true,
         autoRotateSpeed: 0.3,
       })
       console.log('[PlayerSkin3D] Viewer created')
+
+      // Create animation after viewer is ready
+      try {
+        anim = createAnimation(animation)
+        viewer.animations.add(anim)
+        viewer.animations.play(animation)
+        setAnimationInstance(anim)
+      } catch (e) {
+        console.warn('[PlayerSkin3D] Animation error:', e)
+      }
+
       setSkinViewer(viewer)
     }).catch(err => {
       console.error('[PlayerSkin3D] Error loading skinview3d:', err)
     })
 
     return () => {
-      if (SkinViewer) {
-        console.log('[PlayerSkin3D] Disposing viewer')
-        SkinViewer.dispose()
+      if (anim) {
+        try { viewer.animations.remove(anim.name) } catch {}
       }
-      setSkinViewer(null)
+      if (viewer) {
+        console.log('[PlayerSkin3D] Disposing viewer')
+        viewer.dispose()
+      }
     }
   }, [skinUrl, animation])
 
