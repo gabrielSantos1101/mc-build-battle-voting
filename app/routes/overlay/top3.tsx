@@ -203,21 +203,28 @@ function OverlayTop3() {
     rank: (i + 1) as 1 | 2 | 3,
   }))
 
-  const search = Route.useSearch()
-  const rawColor = search.color?.replace('#', '') ?? ''
-  const hasColor = rawColor.length > 0
-  const bgColor = hasColor ? `#${rawColor}` : 'transparent'
-  const widgetBg = hasColor ? 'transparent' : 'linear-gradient(135deg, rgba(14,13,19,0.92) 0%, rgba(10,9,18,0.88) 100%)'
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search)
+    const rawColor = params.get('color')?.replace('#', '') ?? ''
+    const hasColor = rawColor.length > 0
+    const bgColor = hasColor ? `#${rawColor}` : 'transparent'
+    const widgetBg = hasColor ? 'transparent' : 'linear-gradient(135deg, rgba(14,13,19,0.92) 0%, rgba(10,9,18,0.88) 100%)'
+    
+    document.body.style.background = bgColor
+    document.body.style.minHeight = '100vh'
+    document.body.style.margin = '0'
+    
+    return () => {
+      document.body.style.background = ''
+      document.body.style.minHeight = ''
+      document.body.style.margin = ''
+    }
+  }, [])
+
+  const widgetBg = 'transparent'
 
   return (
-    <div
-      style={{
-        background: bgColor,
-        minHeight: '100vh',
-        width: '100vw',
-        padding: '8px',
-      }}
-    >
+    <div style={{ width: '100vw', padding: '8px' }}>
       <Top3Widget entries={ranked} showResults={round?.show_live_results ?? true} background={widgetBg} />
     </div>
   )
