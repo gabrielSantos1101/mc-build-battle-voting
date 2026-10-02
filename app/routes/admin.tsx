@@ -7,7 +7,7 @@ import { MinecraftButton, PlayerHead, StatusBadge } from '~/components/custom'
 import type { Competitor, FrameTheme, Round, Vote } from '~/lib/supabase/types'
 import { computeVoteStats, formatTimeMMSS, getRemainingSeconds, supabase } from '~/lib'
 
-export const Route = createFileRoute()({
+export const Route = createFileRoute('/admin')({
   component: AdminPage,
 })
 

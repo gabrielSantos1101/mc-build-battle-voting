@@ -5,7 +5,7 @@ import { PlayerHead, TrophyBadge, VoteBar } from '~/components/custom'
 import type { Competitor, CompetitorWithVotes, FrameTheme, Round, Vote } from '~/lib/supabase/types'
 import { computeVoteStats, supabase } from '~/lib'
 
-export const Route = createFileRoute()({
+export const Route = createFileRoute('/overlay/top3')({
   component: OverlayTop3,
 })
 

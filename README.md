@@ -70,13 +70,13 @@ No Dashboard Supabase: **Authentication → Users → Add user**
 
 ### 4. Desenvolvimento
 ```bash
-pnpm install
-pnpm dev
+npm install
+npm run dev
 ```
 
 ### 5. Build
 ```bash
-pnpm build
+npm run build
 ```
 
 ## Estrutura do Projeto
