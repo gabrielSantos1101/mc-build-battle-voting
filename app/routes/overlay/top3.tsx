@@ -26,12 +26,12 @@ interface RankedEntry {
   rank: 1 | 2 | 3
 }
 
-function Top3Widget({ entries, showResults }: { entries: RankedEntry[], showResults: boolean }) {
+function Top3Widget({ entries, showResults, background = 'linear-gradient(135deg, rgba(14,13,19,0.92) 0%, rgba(10,9,18,0.88) 100%)' }: { entries: RankedEntry[], showResults: boolean, background?: string }) {
   return (
     <div
       className="flex flex-col gap-2 p-2"
       style={{
-        background: 'linear-gradient(135deg, rgba(14,13,19,0.92) 0%, rgba(10,9,18,0.88) 100%)',
+        background,
         border: '2px solid rgba(255,120,0,0.4)',
         boxShadow: '0 4px 24px rgba(0,0,0,0.8), inset 0 1px 0 rgba(255,255,255,0.05)',
         minWidth: '260px',
@@ -205,6 +205,7 @@ function OverlayTop3() {
 
   const search = Route.useSearch()
   const bgColor = search.color ?? 'transparent'
+  const widgetBg = search.color ? 'transparent' : 'linear-gradient(135deg, rgba(14,13,19,0.92) 0%, rgba(10,9,18,0.88) 100%)'
 
   return (
     <div
@@ -215,7 +216,7 @@ function OverlayTop3() {
         padding: '8px',
       }}
     >
-      <Top3Widget entries={ranked} showResults={round?.show_live_results ?? true} />
+      <Top3Widget entries={ranked} showResults={round?.show_live_results ?? true} background={widgetBg} />
     </div>
   )
 }
