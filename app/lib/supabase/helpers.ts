@@ -1,4 +1,4 @@
-import { Competitor, CompetitorWithVotes, Vote } from './types'
+import type { Competitor, CompetitorWithVotes, Vote, VotingTimeStatus } from './types'
 
 export function getMinecraftAvatarUrl(nick: string, size = 48): string {
   if (!nick) return 'https://mc-heads.net/avatar/MHF_Steve/48'
@@ -26,7 +26,6 @@ export function computeVoteStats(
   }).sort((a, b) => b.vote_count - a.vote_count)
 }
 
-/** Format remaining time from an exact target ISO timestamp (ends_at) */
 export function getRemainingSeconds(endsAt: string | null): number {
   if (!endsAt) return 0
   const targetTime = new Date(endsAt).getTime()
@@ -100,7 +99,7 @@ export function getVotingTimeStatusText(startsAt: string | null, endsAt: string 
       const seconds = getRemainingSeconds(endsAt)
       return { label: `Termina em ${formatTimeMMSS(seconds)}`, variant: 'active' }
     }
-    case 'ended':
+    default:
       return { label: 'Encerrada', variant: 'ended' }
   }
 }

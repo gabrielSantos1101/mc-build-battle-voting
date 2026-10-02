@@ -23,7 +23,7 @@ export interface Competitor {
   round_id: string
   player_nick: string
   image_url: string
-  skin_url?: string
+  skin_url?: string | null
   frame_theme: FrameTheme
   created_at: string
 }

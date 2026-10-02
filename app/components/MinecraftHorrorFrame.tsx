@@ -2,6 +2,15 @@ import React from 'react'
 import { cn } from '~/lib/cn'
 import type { FrameTheme } from '~/lib/supabase'
 
+interface FrameConfig {
+  label: string
+  image: string
+  borderColor: string
+  glowColor: string
+  accentColor: string
+  inset: { top: string; bottom: string; left: string; right: string }
+}
+
 export const FRAME_CONFIGS: Record<FrameTheme, FrameConfig> = {
   'warden-sculk': {
     label: 'Deep Dark / Warden',

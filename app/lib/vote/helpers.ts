@@ -1,7 +1,6 @@
 import { supabase } from '../supabase/client'
-import type { Vote, Round, IPInfo } from '../supabase/types'
 import { getClientIP } from '../ip/detection'
-import { getDeviceId, hasVotedInRound as checkDeviceVoted, markVotedInRound as markDeviceVoted } from '../auth'
+import { getDeviceId } from '../auth'
 
 export async function hasIPVotedInRound(roundId: string, ip: string): Promise<boolean> {
   const { data, error } = await supabase

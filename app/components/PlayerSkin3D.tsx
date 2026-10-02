@@ -54,16 +54,14 @@ export function PlayerSkin3D({
     >
       <ReactSkinview3d
         skinUrl={skinUrl}
-        autoRotate={true}
-        autoRotateSpeed={0.4}
         width={size}
         height={size}
-        style={{ width: size, height: size }}
+        onReady={({ viewer }) => {
+          viewer.autoRotate = true
+          viewer.autoRotateSpeed = 0.4
+        }}
         options={{
-          backgroundAlpha: 0,
-          backgroundColor: 0x000000,
-          enableZoom: false,
-          enablePan: false,
+          enableControls: true,
         }}
       />
     </div>

@@ -1,6 +1,5 @@
 import type { IPInfo, AuthPayload } from '../supabase/types'
 import { getClientIP } from '../ip/detection'
-import { supabase } from '../supabase/client'
 
 const JWT_SECRET = (import.meta as any).env?.VITE_JWT_SECRET || 'build-battle-secret-key-change-in-production'
 
