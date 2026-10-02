@@ -3,6 +3,7 @@ import React from 'react'
 interface TrophyBadgeProps {
   place: 1 | 2 | 3
   size?: 'sm' | 'md' | 'lg'
+  variant?: 'full' | 'badge'
 }
 
 const TROPHY_CONFIGS = {
@@ -11,10 +12,28 @@ const TROPHY_CONFIGS = {
   3: { color: '#cd7f32', label: '3°', icon: '▲', glow: '#cd7f3260' },
 }
 
-export function TrophyBadge({ place, size = 'md' }: TrophyBadgeProps) {
+export function TrophyBadge({ place, size = 'md', variant = 'full' }: TrophyBadgeProps) {
   const config = TROPHY_CONFIGS[place]
   const dim = size === 'sm' ? 28 : size === 'md' ? 40 : 56
   const fontSize = size === 'sm' ? 8 : size === 'md' ? 12 : 16
+
+  if (variant === 'badge') {
+    return (
+      <span
+        style={{
+          fontFamily: "'Press Start 2P', monospace",
+          fontSize,
+          color: config.color,
+          textShadow: `0 0 8px ${config.glow}, 0 0 16px ${config.glow}`,
+          display: 'inline-flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+        }}
+      >
+        {config.label}
+      </span>
+    )
+  }
 
   return (
     <div

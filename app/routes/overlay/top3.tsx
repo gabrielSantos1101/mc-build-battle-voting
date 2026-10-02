@@ -77,7 +77,7 @@ function Top3Widget({ entries, showResults }: { entries: RankedEntry[], showResu
                 exit={{ opacity: 0, x: 10 }}
                 transition={{ delay: index * 0.15 + 0.05 }}
               >
-                <TrophyBadge place={rank} size="sm" />
+                <TrophyBadge place={rank} size="sm" variant="badge" />
               </motion.div>
               <motion.div
                 layout
