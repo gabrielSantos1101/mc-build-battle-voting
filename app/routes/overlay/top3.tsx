@@ -199,15 +199,7 @@ function OverlayTop3() {
     rank: (i + 1) as 1 | 2 | 3,
   }))
 
-  const [widgetBg, setWidgetBg] = useState('transparent')
-
-  useEffect(() => {
-    const params = new URLSearchParams(window.location.search)
-    const rawColor = params.get('color')?.replace('#', '') ?? ''
-    const hasColor = rawColor.length > 0
-    const color = hasColor ? `#${rawColor}` : 'transparent'
-    setWidgetBg(color)
-  }, [])
+  const widgetBg = 'linear-gradient(135deg, rgba(14,13,19,0.92) 0%, rgba(10,9,18,0.88) 100%)'
 
   return (
     <div style={{ width: '100vw', padding: '8px' }}>

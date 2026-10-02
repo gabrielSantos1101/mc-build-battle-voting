@@ -11,7 +11,15 @@ export const Route = createRootRoute({
 })
 
 function RootComponent() {
-  const [bgColor, setBgColor] = useState('transparent')
+  const [bgColor, setBgColor] = useState(() => {
+    if (typeof window !== 'undefined') {
+      const params = new URLSearchParams(window.location.search)
+      const rawColor = params.get('color')?.replace('#', '') ?? ''
+      const hasColor = rawColor.length > 0
+      return hasColor ? `#${rawColor}` : 'transparent'
+    }
+    return 'transparent'
+  })
 
   useEffect(() => {
     const params = new URLSearchParams(window.location.search)
