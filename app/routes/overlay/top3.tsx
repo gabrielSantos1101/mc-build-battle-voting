@@ -1,6 +1,6 @@
 import { createFileRoute } from '@tanstack/react-router'
 import { AnimatePresence, motion } from 'framer-motion'
-import { useEffect, useState } from 'react'
+import { useState } from 'react'
 import { PlayerHead, TrophyBadge, VoteBar } from '~/components/custom'
 import type { Competitor, CompetitorWithVotes, FrameTheme, Round, Vote } from '~/lib/supabase'
 import { computeVoteStats, supabase } from '~/lib/supabase'
@@ -203,25 +203,10 @@ function OverlayTop3() {
     rank: (i + 1) as 1 | 2 | 3,
   }))
 
-  useEffect(() => {
-    const params = new URLSearchParams(window.location.search)
-    const rawColor = params.get('color')?.replace('#', '') ?? ''
-    const hasColor = rawColor.length > 0
-    const bgColor = hasColor ? `#${rawColor}` : 'transparent'
-    const widgetBg = hasColor ? 'transparent' : 'linear-gradient(135deg, rgba(14,13,19,0.92) 0%, rgba(10,9,18,0.88) 100%)'
-    
-    document.body.style.background = bgColor
-    document.body.style.minHeight = '100vh'
-    document.body.style.margin = '0'
-    
-    return () => {
-      document.body.style.background = ''
-      document.body.style.minHeight = ''
-      document.body.style.margin = ''
-    }
-  }, [])
-
-  const widgetBg = 'transparent'
+  const search = Route.useSearch()
+  const rawColor = search.color?.replace('#', '') ?? ''
+  const hasColor = rawColor.length > 0
+  const widgetBg = hasColor ? 'transparent' : 'linear-gradient(135deg, rgba(14,13,19,0.92) 0%, rgba(10,9,18,0.88) 100%)'
 
   return (
     <div style={{ width: '100vw', padding: '8px' }}>
