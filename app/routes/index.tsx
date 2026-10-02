@@ -425,15 +425,9 @@ function VotingPage() {
 
     const { canVote: allowed, reason } = await canVote(round.id)
     if (!allowed) {
-      if (reason === 'device') {
-        setHasVoted(true)
-        markVotedInRound(round.id)
-        setError('Você já votou nesta rodada neste dispositivo.')
-      } else if (reason === 'ip') {
-        setHasVoted(true)
-        markVotedInRound(round.id)
-        setError('Este IP já votou nesta rodada.')
-      }
+      setHasVoted(true)
+      markVotedInRound(round.id)
+      setError('Você já votou nesta rodada.')
       return
     }
 
@@ -451,7 +445,7 @@ function VotingPage() {
       if (voteErr.code === '23505') {
         setHasVoted(true)
         markVotedInRound(round.id)
-        setError(voteErr.message?.includes('ip') ? 'Este IP já votou nesta rodada.' : 'Você já votou nesta rodada.')
+        setError('Você já votou nesta rodada.')
       } else {
         setError('Erro ao enviar voto. Tente novamente.')
       }
@@ -684,12 +678,6 @@ function VotingPage() {
           </div>
           <div className="text-[7px] text-[#aaa] flex items-center justify-center gap-4 flex-wrap">
             <span>Anti-fraude: 1 voto por dispositivo</span>
-            {ipInfo && (
-              <>
-                <span>•</span>
-                <span className="text-warden-teal">{ipInfo.ip}</span>
-              </>
-            )}
             <span>•</span>
             <a
               href="/admin"

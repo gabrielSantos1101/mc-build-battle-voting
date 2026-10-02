@@ -77,7 +77,7 @@ export function MinecraftHorrorFrame({
 
         {/* Conteúdo do card na área interna (fica ATRÁS do frame) */}
         <div
-          className="absolute z-10 flex flex-col justify-between p-12"
+          className="absolute z-10 flex flex-col justify-between p-12 bg-obsidian"
           style={{
             top: config.inset.top,
             bottom: config.inset.bottom,
