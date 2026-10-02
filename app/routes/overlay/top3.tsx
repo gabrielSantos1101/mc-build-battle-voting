@@ -53,7 +53,6 @@ function Top3Widget({ entries, showResults }: { entries: RankedEntry[], showResu
       <AnimatePresence initial={false}>
         {entries.map(({ competitor, rank }) => {
           const accent = FRAME_ACCENT[competitor.frame_theme as FrameTheme] ?? '#ff7800'
-          const skinUrl = skinUrls[competitor.player_nick]
           return (
             <motion.div
               key={competitor.id}
