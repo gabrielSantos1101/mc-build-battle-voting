@@ -208,7 +208,17 @@ function OverlayTop3() {
   const bgColor = color ?? 'transparent'
 
   return (
-    <div style={{ background: bgColor, padding: '8px', display: 'inline-block' }}>
+    <div
+      style={{
+        background: bgColor,
+        minHeight: '100vh',
+        width: '100vw',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        padding: '8px',
+      }}
+    >
       <Top3Widget entries={ranked} showResults={round?.show_live_results ?? true} />
     </div>
   )
