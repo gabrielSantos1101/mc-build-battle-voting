@@ -204,8 +204,10 @@ function OverlayTop3() {
   }))
 
   const search = Route.useSearch()
-  const bgColor = search.color ?? 'transparent'
-  const widgetBg = search.color ? 'transparent' : 'linear-gradient(135deg, rgba(14,13,19,0.92) 0%, rgba(10,9,18,0.88) 100%)'
+  const rawColor = search.color?.replace('#', '') ?? ''
+  const hasColor = rawColor.length > 0
+  const bgColor = hasColor ? `#${rawColor}` : 'transparent'
+  const widgetBg = hasColor ? 'transparent' : 'linear-gradient(135deg, rgba(14,13,19,0.92) 0%, rgba(10,9,18,0.88) 100%)'
 
   return (
     <div
