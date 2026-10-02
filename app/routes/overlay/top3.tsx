@@ -49,24 +49,55 @@ function Top3Widget({ entries, showResults }: { entries: RankedEntry[], showResu
         )}
       </div>
 
-      {/* Entries */}
-      <AnimatePresence initial={false}>
-        {entries.map(({ competitor, rank }) => {
+      {/* Entries - Individual loading + layout transitions */}
+      <AnimatePresence initial={false} mode="popLayout">
+        {entries.map(({ competitor, rank }, index) => {
           const accent = FRAME_ACCENT[competitor.frame_theme as FrameTheme] ?? '#ff7800'
           return (
             <motion.div
               key={competitor.id}
               layout
-              initial={{ opacity: 0, x: -20 }}
-              animate={{ opacity: 1, x: 0 }}
-              exit={{ opacity: 0, x: 20 }}
-              transition={{ type: 'spring', damping: 20, stiffness: 300 }}
+              initial={{ opacity: 0, y: 30, scale: 0.8 }}
+              animate={{ opacity: 1, y: 0, scale: 1 }}
+              exit={{ opacity: 0, y: -30, scale: 0.8 }}
+              transition={{
+                type: 'spring',
+                damping: 18,
+                stiffness: 200,
+                delay: index * 0.15,
+              }}
               className="flex items-center gap-2"
             >
-              <TrophyBadge place={rank} size="sm" />
-              <PlayerHead nick={competitor.player_nick} size={24} />
-              <div className="flex-1 min-w-0">
-                <div
+              <motion.div
+                layout
+                initial={{ opacity: 0, x: -10 }}
+                animate={{ opacity: 1, x: 0 }}
+                exit={{ opacity: 0, x: 10 }}
+                transition={{ delay: index * 0.15 + 0.05 }}
+              >
+                <TrophyBadge place={rank} size="sm" />
+              </motion.div>
+              <motion.div
+                layout
+                initial={{ opacity: 0, x: -10 }}
+                animate={{ opacity: 1, x: 0 }}
+                exit={{ opacity: 0, x: 10 }}
+                transition={{ delay: index * 0.15 + 0.08 }}
+              >
+                <PlayerHead nick={competitor.player_nick} size={24} />
+              </motion.div>
+              <motion.div
+                layout
+                initial={{ opacity: 0, x: -10 }}
+                animate={{ opacity: 1, x: 0 }}
+                exit={{ opacity: 0, x: 10 }}
+                transition={{ delay: index * 0.15 + 0.1 }}
+                className="flex-1 min-w-0"
+              >
+                <motion.div
+                  initial={{ opacity: 0, x: 10 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  transition={{ delay: index * 0.15 + 0.12 }}
                   style={{
                     fontSize: '8px',
                     color: accent,
@@ -77,27 +108,44 @@ function Top3Widget({ entries, showResults }: { entries: RankedEntry[], showResu
                   }}
                 >
                   {competitor.player_nick}
-                </div>
+                </motion.div>
                 {showResults ? (
-                  <VoteBar
-                    percentage={competitor.vote_percentage}
-                    count={competitor.vote_count}
-                    color={accent}
-                    animated
-                  />
+                  <motion.div
+                    initial={{ opacity: 0, height: 0 }}
+                    animate={{ opacity: 1, height: 'auto' }}
+                    transition={{ delay: index * 0.15 + 0.15 }}
+                  >
+                    <VoteBar
+                      percentage={competitor.vote_percentage}
+                      count={competitor.vote_count}
+                      color={accent}
+                      animated
+                    />
+                  </motion.div>
                 ) : (
-                  <div style={{ fontSize: '6px', color: '#444' }}>{'░'.repeat(10)}</div>
+                  <motion.div
+                    initial={{ opacity: 0, x: 10 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    transition={{ delay: index * 0.15 + 0.15 }}
+                    style={{ fontSize: '6px', color: '#444' }}
+                  >
+                    {'░'.repeat(10)}
+                  </motion.div>
                 )}
-              </div>
+              </motion.div>
             </motion.div>
           )
         })}
       </AnimatePresence>
 
       {entries.length === 0 && (
-        <div style={{ fontSize: '7px', color: '#444', textAlign: 'center', padding: '8px' }}>
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          style={{ fontSize: '7px', color: '#444', textAlign: 'center', padding: '8px' }}
+        >
           Aguardando votos...
-        </div>
+        </motion.div>
       )}
     </div>
   )
