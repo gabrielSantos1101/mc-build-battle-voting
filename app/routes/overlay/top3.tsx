@@ -1,15 +1,11 @@
 import { createFileRoute } from '@tanstack/react-router'
 import { AnimatePresence, motion } from 'framer-motion'
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { PlayerHead, TrophyBadge, VoteBar } from '~/components/custom'
 import type { Competitor, CompetitorWithVotes, FrameTheme, Round, Vote } from '~/lib/supabase'
 import { computeVoteStats, supabase } from '~/lib/supabase'
-import { z } from 'zod'
 
 export const Route = createFileRoute()({
-  validateSearch: z.object({
-    color: z.string().optional(),
-  }).optional(),
   component: OverlayTop3,
 })
 
@@ -29,7 +25,7 @@ interface RankedEntry {
 function Top3Widget({ entries, showResults, background = 'linear-gradient(135deg, rgba(14,13,19,0.92) 0%, rgba(10,9,18,0.88) 100%)' }: { entries: RankedEntry[], showResults: boolean, background?: string }) {
   return (
     <div
-      className="flex flex-col gap-2 p-2"
+      className="flex flex-col bg-obsidian gap-2 p-2"
       style={{
         background,
         border: '2px solid rgba(255,120,0,0.4)',
@@ -203,10 +199,15 @@ function OverlayTop3() {
     rank: (i + 1) as 1 | 2 | 3,
   }))
 
-  const search = Route.useSearch()
-  const rawColor = search.color?.replace('#', '') ?? ''
-  const hasColor = rawColor.length > 0
-  const widgetBg = hasColor ? 'transparent' : 'linear-gradient(135deg, rgba(14,13,19,0.92) 0%, rgba(10,9,18,0.88) 100%)'
+  const [widgetBg, setWidgetBg] = useState('transparent')
+
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search)
+    const rawColor = params.get('color')?.replace('#', '') ?? ''
+    const hasColor = rawColor.length > 0
+    const color = hasColor ? `#${rawColor}` : 'transparent'
+    setWidgetBg(color)
+  }, [])
 
   return (
     <div style={{ width: '100vw', padding: '8px' }}>

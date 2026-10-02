@@ -1,5 +1,5 @@
 import { Outlet, createRootRoute } from '@tanstack/react-router'
-import { useEffect } from 'react'
+import { useEffect, useState } from 'react'
 import { z } from 'zod'
 import '../styles.css'
 
@@ -11,13 +11,19 @@ export const Route = createRootRoute({
 })
 
 function RootComponent() {
-  const search = Route.useSearch()
-  const rawColor = search.color?.replace('#', '') ?? ''
-  const hasColor = rawColor.length > 0
-  const bgColor = hasColor ? `#${rawColor}` : 'transparent'
+  const [bgColor, setBgColor] = useState('transparent')
+
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search)
+    const rawColor = params.get('color')?.replace('#', '') ?? ''
+    const hasColor = rawColor.length > 0
+    const color = hasColor ? `#${rawColor}` : 'transparent'
+    console.log('[Root] color param:', rawColor, '->', color)
+    setBgColor(color)
+  }, [])
 
   return (
-    <div 
+    <div
       className="min-h-screen text-[#e0e0e0]"
       style={{ background: bgColor }}
     >
