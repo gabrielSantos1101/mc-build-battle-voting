@@ -16,7 +16,6 @@ const DEFAULT_PASSWORD = 'GiodLgQjH7w'
 
 const EDGE_FUNCTION_URL = import.meta.env.VITE_SUPABASE_URL?.replace('.supabase.co', '.supabase.co/functions/v1/get-skin')
 
-// Helper to fetch skin URL via Edge Function (no CORS issues)
 async function fetchSkinUrl(nick: string): Promise<string | null> {
   try {
     if (!EDGE_FUNCTION_URL) return null
@@ -83,7 +82,6 @@ function AdminPage() {
   const fileInputRef = useRef<HTMLInputElement>(null)
   const editFileInputRef = useRef<HTMLInputElement>(null)
 
-  // Check auth on mount
   useEffect(() => {
     async function checkAuth() {
       const { data: { session } } = await supabase.auth.getSession()
@@ -104,7 +102,6 @@ function AdminPage() {
     checkAuth()
   }, [])
 
-  // Timer updater baseado estritamente no timestamp de término
   useEffect(() => {
     if (!currentRound?.ends_at || currentRound.status !== 'active') {
       setRemainingTime(0)
@@ -124,7 +121,6 @@ function AdminPage() {
     }
   }, [currentRound?.ends_at, currentRound?.status])
 
-  // Load rounds on auth
   useEffect(() => {
     if (isAuthenticated) {
       loadRounds()
@@ -178,7 +174,6 @@ function AdminPage() {
     setVotes(data || [])
   }
 
-  // Realtime
   useEffect(() => {
     if (!currentRound) return
 
@@ -207,7 +202,6 @@ function AdminPage() {
     return () => { supabase.removeChannel(channel) }
   }, [currentRound?.id])
 
-  // Auth handlers - Supabase Auth
   async function handleAuth(e: React.FormEvent) {
     e.preventDefault()
     setAuthLoading(true)
@@ -259,7 +253,6 @@ function AdminPage() {
     setConfirmPassword('')
   }
 
-  // Create round
   async function handleCreateRound(e: React.FormEvent) {
     e.preventDefault()
     if (!newRoundTitle.trim()) return
@@ -284,7 +277,6 @@ function AdminPage() {
     }
   }
 
-  // Change round status with exact timestamp from the date picker
   async function updateRoundStatus(status: 'draft' | 'active' | 'paused' | 'finished') {
     if (!currentRound) return
 
@@ -294,7 +286,6 @@ function AdminPage() {
       if (startsAtDate) {
         updatePayload.starts_at = startsAtDate.toISOString()
       } else {
-        // Se não definiu data/hora, inicia agora
         updatePayload.starts_at = new Date().toISOString()
       }
     } else if (status === 'finished') {
@@ -310,8 +301,6 @@ function AdminPage() {
       .eq('id', currentRound.id)
 
     if (error) {
-      console.error('Erro ao atualizar status da rodada:', error)
-      // Se houver erro com coluna ends_at, tenta atualizar apenas o status
       const { error: fallbackErr } = await supabase
         .from('rounds')
         .update({ status })
@@ -336,7 +325,6 @@ function AdminPage() {
     }
   }
 
-  // Auto-save starts_at when changed (only in draft/paused)
   async function handleStartsAtChange(date: Date | undefined) {
     setStartsAtDate(date)
     if (!currentRound || !date) return
@@ -353,7 +341,6 @@ function AdminPage() {
     }
   }
 
-  // Toggle suspense mode
   async function toggleLiveResults() {
     if (!currentRound) return
     const updated = !currentRound.show_live_results
@@ -368,7 +355,6 @@ function AdminPage() {
     }
   }
 
-  // Reset votes
   async function handleResetVotes() {
     if (!currentRound) return
     if (!confirm('Tem certeza que deseja zerar todos os votos desta rodada?')) return
@@ -377,7 +363,6 @@ function AdminPage() {
     setVotes([])
   }
 
-  // Populate missing skin_urls for current round competitors
   async function handlePopulateSkinUrls() {
     if (!currentRound) return
     if (!confirm('Buscar e salvar skins dos competidores que não têm skin_url?')) return
@@ -403,7 +388,6 @@ function AdminPage() {
           .eq('id', c.id)
         if (!error) success++
       }
-      // Small delay to avoid rate limiting
       await new Promise(r => setTimeout(r, 200))
     }
 
@@ -411,7 +395,6 @@ function AdminPage() {
     await loadCompetitors(currentRound.id)
   }
 
-  // File selection
   function handleFileChange(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0]
     if (file) {
@@ -422,7 +405,6 @@ function AdminPage() {
     }
   }
 
-  // Add competitor
   async function handleAddCompetitor(e: React.FormEvent) {
     e.preventDefault()
     if (!currentRound) return
@@ -466,7 +448,6 @@ function AdminPage() {
       return
     }
 
-    // Fetch skin URL from Mojang
     const skinUrl = await fetchSkinUrl(playerNick.trim())
     
     const { error } = await supabase.from('competitors').insert({
@@ -491,7 +472,6 @@ function AdminPage() {
     setUploading(false)
   }
 
-  // Delete competitor
   async function handleDeleteCompetitor(id: string) {
     if (!confirm('Remover este participante da rodada?')) return
     await supabase.from('competitors').delete().eq('id', id)
@@ -501,7 +481,6 @@ function AdminPage() {
     }
   }
 
-  // Start editing a competitor
   function handleStartEdit(c: Competitor) {
     setEditingCompetitor(c)
     setEditNick(c.player_nick)
@@ -513,7 +492,6 @@ function AdminPage() {
     if (editFileInputRef.current) editFileInputRef.current.value = ''
   }
 
-  // Cancel editing
   function handleCancelEdit() {
     setEditingCompetitor(null)
     setEditNick('')
@@ -523,7 +501,6 @@ function AdminPage() {
     setEditError(null)
   }
 
-  // Edit file selection
   function handleEditFileChange(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0]
     if (file) {
@@ -534,7 +511,6 @@ function AdminPage() {
     }
   }
 
-  // Save edited competitor
   async function handleSaveEdit(e: React.FormEvent) {
     e.preventDefault()
     if (!editingCompetitor || !currentRound) return
@@ -578,7 +554,6 @@ function AdminPage() {
       return
     }
 
-    // Fetch skin URL if nick changed
     let skinUrl = editingCompetitor.skin_url
     if (editNick.trim() !== editingCompetitor.player_nick) {
       skinUrl = await fetchSkinUrl(editNick.trim())
@@ -604,7 +579,6 @@ function AdminPage() {
     setEditUploading(false)
   }
 
-  // Supabase Auth Login Screen
   if (!isAuthenticated) {
     return (
       <div className="min-h-screen flex items-center justify-center p-4 bg-[#0a0912]">

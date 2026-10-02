@@ -2,21 +2,6 @@ import React from 'react'
 import type { FrameTheme } from '~/lib/supabase'
 import { cn } from '~/lib/cn'
 
-interface FrameConfig {
-  label: string
-  image: string
-  borderColor: string
-  glowColor: string
-  accentColor: string
-  // Área interna onde o conteúdo do card aparece (sob o frame)
-  inset: {
-    top: string
-    bottom: string
-    left: string
-    right: string
-  }
-}
-
 export const FRAME_CONFIGS: Record<FrameTheme, FrameConfig> = {
   'warden-sculk': {
     label: 'Deep Dark / Warden',

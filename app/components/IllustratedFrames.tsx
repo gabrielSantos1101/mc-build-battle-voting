@@ -1,7 +1,4 @@
 
-// ============================================================
-// 1. WARDEN & SCULK FRAME (Deep Dark)
-// ============================================================
 export function WardenSculkFrameOverlay() {
   return (
     <div className="absolute inset-0 pointer-events-none select-none z-20">
@@ -46,9 +43,6 @@ export function WardenSculkFrameOverlay() {
   )
 }
 
-// ============================================================
-// 2. PALE GARDEN & THE CREAKING FRAME
-// ============================================================
 export function PaleGardenFrameOverlay() {
   return (
     <div className="absolute inset-0 pointer-events-none select-none z-20">
@@ -97,9 +91,6 @@ export function PaleGardenFrameOverlay() {
   )
 }
 
-// ============================================================
-// 3. JACK-O'-LANTERN & SOUL FIRE FRAME
-// ============================================================
 export function JackPumpkinFrameOverlay() {
   return (
     <div className="absolute inset-0 pointer-events-none select-none z-20">
@@ -150,9 +141,6 @@ export function JackPumpkinFrameOverlay() {
   )
 }
 
-// ============================================================
-// 4. WITHER BOSS FRAME
-// ============================================================
 export function WitherBossFrameOverlay() {
   return (
     <div className="absolute inset-0 pointer-events-none select-none z-20">
@@ -200,9 +188,6 @@ export function WitherBossFrameOverlay() {
   )
 }
 
-// ============================================================
-// 5. ENDER DRAGON FRAME
-// ============================================================
 export function EnderDragonFrameOverlay() {
   return (
     <div className="absolute inset-0 pointer-events-none select-none z-20">

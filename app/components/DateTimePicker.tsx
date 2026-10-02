@@ -1,5 +1,3 @@
-// DatePickerTime — padrão exato shadcn/ui date-picker com time input
-// Adaptado de https://ui.shadcn.com/docs/components/base/date-picker
 import { addMinutes, format } from 'date-fns'
 import { ptBR } from 'date-fns/locale'
 import { ChevronDownIcon } from 'lucide-react'
@@ -22,12 +20,10 @@ interface DateTimePickerProps {
 export function DateTimePicker({ value, onChange, label, minDate, disabled = false }: DateTimePickerProps) {
   const [open, setOpen] = React.useState(false)
 
-  // Valor de hora no formato HH:MM para o input nativo
   const timeValue = value ? format(value, 'HH:mm') : '23:59'
 
   function handleDaySelect(day: Date | undefined) {
     if (!day) { onChange(undefined); setOpen(false); return }
-    // Preserva a hora atual ao mudar o dia
     const [h, m] = timeValue.split(':').map(Number)
     const merged = new Date(day)
     merged.setHours(h, m, 0, 0)

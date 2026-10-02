@@ -183,7 +183,6 @@ function CompetitorCard({
   )
 }
 
-// Modal de Zoom
 function ZoomModal({
   competitor,
   onClose,
@@ -237,7 +236,6 @@ function ZoomModal({
   )
 }
 
-// Tela de Espera
 function WaitingScreen({ status }: { status: string }) {
   const configs: Record<string, { icon: string; title: string; desc: string }> = {
     draft: {
@@ -287,7 +285,6 @@ function VotingPage() {
   const [authReady, setAuthReady] = useState(false)
   const deviceId = useRef(getDeviceId())
 
-  // Timer sincronizado com timestamps do servidor (starts_at / ends_at)
   useEffect(() => {
     if (!round) {
       setVotingTimeStatus('ended')
@@ -373,6 +370,7 @@ function VotingPage() {
     loadActiveRound()
   }, [])
 
+  // Prioriza rodada ativa ou busca a rodada mais recente (inclusive em draft para modo apresentação)
   async function loadCompetitors(roundId: string) {
     const { data } = await supabase
       .from('competitors')
@@ -392,7 +390,6 @@ function VotingPage() {
     setVotes(data || [])
   }
 
-  // Realtime Subscriptions
   useEffect(() => {
     if (!round) return
 
@@ -416,7 +413,6 @@ function VotingPage() {
     if (!round || hasVoted || !authReady) return
     setError(null)
 
-    // Verifica se votação está no horário permitido
     if (!canVoteByTime(round.starts_at, round.ends_at)) {
       const status = getVotingTimeStatus(round.starts_at, round.ends_at)
       if (status === 'not_started') {

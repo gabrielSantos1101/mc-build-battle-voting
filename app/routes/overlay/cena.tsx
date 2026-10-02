@@ -50,10 +50,9 @@ function PodiumCard({
   const scales = { 1: 'scale-110', 2: 'scale-100', 3: 'scale-95' }
   const [skinUrl, setSkinUrl] = useState<string | null>(competitor.skin_url ?? null)
 
-  // Auto-fetch skin if missing
   useEffect(() => {
     if (!competitor.skin_url) {
-      const EDGE_FUNCTION_URL = import.meta.env.VITE_SUPABASE_URL?.replace('.supabase.co', '.supabase.co/functions/v1/get-skin')
+      const EDGE_FUNCTION_URL = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/get-skin`
       if (EDGE_FUNCTION_URL) {
         fetch(EDGE_FUNCTION_URL, {
           method: 'POST',
@@ -64,20 +63,18 @@ function PodiumCard({
           .then(data => {
             if (data?.skinUrl) {
               setSkinUrl(data.skinUrl)
-              // Optionally update DB via Supabase (optional, for caching)
               supabase.from('competitors').update({ skin_url: data.skinUrl }).eq('id', competitor.id)
             }
           })
-          .catch(console.error)
       }
     }
   }, [competitor.id, competitor.player_nick])
 
   return (
     <motion.div
-      initial={{ opacity: 0, y: 60, scale: 0.8 }}
-      animate={revealed ? { opacity: 1, y: 0, scale: 1 } : { opacity: 0, y: 60, scale: 0.8 }}
-      transition={{ type: 'spring', damping: 18, stiffness: 200, delay: rank === 1 ? 0.6 : rank === 2 ? 0.3 : 0 }}
+      initial={{ opacity: 0, y: 80, scale: 0.7 }}
+      animate={revealed ? { opacity: 1, y: 0, scale: 1 } : { opacity: 0, y: 80, scale: 0.7 }}
+      transition={{ type: 'spring', damping: 16, stiffness: 180, delay: rank === 3 ? 0 : rank === 2 ? 0.35 : 0.7 }}
       className={`flex flex-col items-center ${scales[rank]}`}
     >
 
@@ -102,12 +99,39 @@ function PodiumCard({
         )}
       </div>
 
-      {/* 3D Skin - Floating animated skin */}
-      {skinUrl && (
-        <div className="mb-4" style={{ display: 'flex', justifyContent: 'center' }}>
+      {/* 3D Skin - Fixed container to prevent layout shift */}
+      <div
+        className="mb-4"
+        style={{
+          display: 'flex',
+          justifyContent: 'center',
+          width: 220,
+          height: 220,
+          flexShrink: 0
+        }}
+      >
+        {skinUrl ? (
           <PlayerSkin3D skinUrl={skinUrl} size={220} />
-        </div>
-      )}
+        ) : (
+          <div
+            style={{
+              width: 220,
+              height: 220,
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              background: 'transparent',
+              border: `2px solid ${accent}44`,
+              borderRadius: '8px',
+              color: '#666',
+              fontSize: '10px',
+              fontFamily: 'monospace'
+            }}
+          >
+            Loading...
+          </div>
+        )}
+      </div>
 
       {/* Player info */}
       <div
@@ -176,45 +200,29 @@ function OverlayCena() {
       setRound(roundData)
 
       const { data: comps } = await supabase.from('competitors').select('*').eq('round_id', roundData.id)
-      console.log('[OverlayCena] Competitors loaded:', comps?.map(c => ({ nick: c.player_nick, skin_url: c.skin_url })))
       setCompetitors(comps ?? [])
 
       const { data: voteData } = await supabase.from('votes').select('*').eq('round_id', roundData.id)
       setVotes(voteData ?? [])
     }
+
     init()
   }, [])
 
   useEffect(() => {
-    if (!round) return
-    const channel = supabase
-      .channel(`overlay-cena-${round.id}`)
-      .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'votes', filter: `round_id=eq.${round.id}` }, (payload) => {
-        setVotes((prev) => [...prev, payload.new as Vote])
-      })
-      .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'rounds', filter: `id=eq.${round.id}` }, (payload) => {
-        const updated = payload.new as Round
-        setRound(updated)
-        // Auto-reveal when round finishes
-        if (updated.status === 'finished') setRevealed(true)
-      })
-      .subscribe()
-    return () => { supabase.removeChannel(channel) }
-  }, [round?.id])
+    if (round && competitors.length > 0) {
+      const timer = setTimeout(() => setRevealed(true), 300)
+      return () => clearTimeout(timer)
+    }
+  }, [round, competitors.length])
 
-  // Also reveal if show_live_results is true
-  useEffect(() => {
-    if (round?.show_live_results) setRevealed(true)
-  }, [round?.show_live_results])
-
-  const ranked = computeVoteStats(competitors, votes).slice(0, 3)
+  const ranked = computeVoteStats(competitors, votes)
   const top3: Array<{ competitor: CompetitorWithVotes; rank: 1 | 2 | 3 }> = [
-    ...(ranked[1] ? [{ competitor: ranked[1], rank: 2 as const }] : []),
-    ...(ranked[0] ? [{ competitor: ranked[0], rank: 1 as const }] : []),
     ...(ranked[2] ? [{ competitor: ranked[2], rank: 3 as const }] : []),
+    ...(ranked[0] ? [{ competitor: ranked[0], rank: 1 as const }] : []),
+    ...(ranked[1] ? [{ competitor: ranked[1], rank: 2 as const }] : []),
   ]
 
-  // Remaining places (4th onward)
   const rest = computeVoteStats(competitors, votes).slice(3)
 
   return (
@@ -276,21 +284,70 @@ function OverlayCena() {
         )}
       </div>
 
-      {/* Rest of the ranking (4th+) */}
+      {/* Rest of the ranking (4th+) - Vertical list below podium */}
       {revealed && rest.length > 0 && (
         <motion.div
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          transition={{ delay: 1.5 }}
-          className="flex gap-4 relative z-10"
-          style={{ borderTop: '1px solid #ff780022', paddingTop: '12px' }}
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 1.5, duration: 0.5 }}
+          className="flex flex-col gap-2 relative z-10 w-full max-w-md"
+          style={{ marginTop: '60px', padding: '0 16px' }}
         >
+          <div style={{
+            fontSize: '8px',
+            color: '#ff7800',
+            letterSpacing: '1px',
+            marginBottom: '8px',
+            fontFamily: "'Press Start 2P', monospace",
+            textAlign: 'center'
+          }}>
+            📋 CLASSIFICAÇÃO COMPLETA
+          </div>
+
           {rest.map((competitor, i) => (
-            <div key={competitor.id} className="flex items-center gap-1">
-              <span style={{ fontSize: '7px', color: '#555' }}>{i + 4}°</span>
-              <PlayerHead nick={competitor.player_nick} size={16} />
-              <span style={{ fontSize: '7px', color: '#888' }}>{competitor.player_nick}</span>
-            </div>
+            <motion.div
+              key={competitor.id}
+              initial={{ opacity: 0, x: -20 }}
+              animate={{ opacity: 1, x: 0 }}
+              transition={{ delay: 1.6 + i * 0.1, type: 'spring', damping: 20, stiffness: 300 }}
+              className="flex items-center gap-3 p-2"
+              style={{
+                background: 'linear-gradient(90deg, rgba(255,120,0,0.08) 0%, rgba(14,13,19,0.9) 100%)',
+                border: '1px solid #ff780022',
+                borderRadius: '8px',
+                boxShadow: '0 2px 12px rgba(0,0,0,0.4)',
+              }}
+            >
+              <span style={{
+                fontSize: '8px',
+                color: '#ff7800',
+                fontFamily: "'Press Start 2P', monospace",
+                minWidth: '28px',
+                textAlign: 'right',
+              }}>
+                {i + 4}°
+              </span>
+              <PlayerHead nick={competitor.player_nick} size={20} />
+              <span style={{
+                fontSize: '8px',
+                color: '#ccc',
+                fontFamily: "'Press Start 2P', monospace",
+                flex: 1,
+                overflow: 'hidden',
+                textOverflow: 'ellipsis',
+                whiteSpace: 'nowrap',
+              }}>
+                {competitor.player_nick}
+              </span>
+              <span style={{
+                fontSize: '7px',
+                color: '#ff7800',
+                fontFamily: "'Press Start 2P', monospace",
+                fontWeight: 'bold',
+              }}>
+                {competitor.vote_count} votos
+              </span>
+            </motion.div>
           ))}
         </motion.div>
       )}

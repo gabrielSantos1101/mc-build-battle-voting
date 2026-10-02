@@ -20,12 +20,9 @@ export function PlayerSkin3D({
     img.crossOrigin = 'anonymous'
     img.src = skinUrl
     img.onload = () => {
-      console.log('[PlayerSkin3D] Skin image loaded', { width: img.width, height: img.height })
       setSkinLoaded(true)
     }
-    img.onerror = (err) => {
-      console.error('[PlayerSkin3D] Failed to load skin:', err, skinUrl)
-    }
+    img.onerror = () => {}
     img.crossOrigin = 'anonymous'
   }, [skinUrl])
 
@@ -67,15 +64,11 @@ export function PlayerSkin3D({
           backgroundColor: 0x000000
         }}
         onReady={(viewer) => {
-          // Enable walk animation (walking motion)
           try {
             const anim = viewer.createAnimation('walk')
             viewer.animations.add(anim)
             viewer.animations.play('walk')
-            console.log('[PlayerSkin3D] Walk animation started')
-          } catch (e) {
-            console.warn('[PlayerSkin3D] Animation error:', e)
-          }
+          } catch {}
         }}
       />
     </div>
