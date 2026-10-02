@@ -2,8 +2,8 @@ import { createFileRoute } from '@tanstack/react-router'
 import { AnimatePresence, motion } from 'framer-motion'
 import { useEffect, useState } from 'react'
 import { PlayerHead, TrophyBadge, VoteBar } from '~/components/custom'
-import type { Competitor, CompetitorWithVotes, FrameTheme, Round, Vote } from '~/lib/supabase'
-import { computeVoteStats, supabase } from '~/lib/supabase'
+import type { Competitor, CompetitorWithVotes, FrameTheme, Round, Vote } from '~/lib/supabase/types'
+import { computeVoteStats, supabase } from '~/lib'
 
 export const Route = createFileRoute()({
   component: OverlayTop3,

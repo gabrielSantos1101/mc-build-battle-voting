@@ -3,8 +3,8 @@ import { motion } from 'framer-motion'
 import { useEffect, useState } from 'react'
 import { PlayerHead } from '~/components/custom'
 import { PlayerSkin3D } from '~/components/PlayerSkin3D'
-import type { Competitor, CompetitorWithVotes, FrameTheme, Round, Vote } from '~/lib/supabase'
-import { computeVoteStats, supabase } from '~/lib/supabase'
+import type { Competitor, CompetitorWithVotes, FrameTheme, Round, Vote } from '~/lib/supabase/types'
+import { computeVoteStats, supabase } from '~/lib'
 
 export const Route = createFileRoute()({
   component: OverlayCena,

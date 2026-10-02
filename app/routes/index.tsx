@@ -4,7 +4,7 @@ import { X } from 'lucide-react'
 import { useEffect, useRef, useState } from 'react'
 import { FRAME_CONFIGS, MinecraftHorrorFrame } from '~/components/MinecraftHorrorFrame'
 import { PlayerHead, VoteBar } from '~/components/custom'
-import type { Competitor, CompetitorWithVotes, FrameTheme, IPInfo, Round, Vote, VotingTimeStatus } from '~/lib/supabase'
+import type { Competitor, CompetitorWithVotes, FrameTheme, IPInfo, Round, Vote, VotingTimeStatus } from '~/lib/supabase/types'
 import {
   canVote,
   canVoteByTime,
@@ -18,7 +18,7 @@ import {
   initializeAuth,
   markVotedInRound,
   supabase
-} from '~/lib/supabase'
+} from '~/lib'
 
 export const Route = createFileRoute()({
   component: VotingPage,

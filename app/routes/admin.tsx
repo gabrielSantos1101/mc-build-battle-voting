@@ -4,8 +4,8 @@ import { Clock, ExternalLink, Eye, EyeOff, Image as ImageIcon, Lock, LogOut, Pen
 import React, { useEffect, useRef, useState } from 'react'
 import { DateTimePicker } from '~/components/DateTimePicker'
 import { MinecraftButton, PlayerHead, StatusBadge } from '~/components/custom'
-import type { Competitor, FrameTheme, Round, Vote } from '~/lib/supabase'
-import { computeVoteStats, formatTimeMMSS, getRemainingSeconds, supabase } from '~/lib/supabase'
+import type { Competitor, FrameTheme, Round, Vote } from '~/lib/supabase/types'
+import { computeVoteStats, formatTimeMMSS, getRemainingSeconds, supabase } from '~/lib'
 
 export const Route = createFileRoute()({
   component: AdminPage,
