@@ -203,9 +203,8 @@ function OverlayTop3() {
     rank: (i + 1) as 1 | 2 | 3,
   }))
 
-  const { color } = Route.useSearch()
-
-  const bgColor = color ?? 'transparent'
+  const search = Route.useSearch()
+  const bgColor = search.color ?? 'transparent'
 
   return (
     <div
@@ -213,9 +212,6 @@ function OverlayTop3() {
         background: bgColor,
         minHeight: '100vh',
         width: '100vw',
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center',
         padding: '8px',
       }}
     >
