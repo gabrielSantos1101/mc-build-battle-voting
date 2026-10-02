@@ -1,6 +1,6 @@
 import React from 'react'
-import type { FrameTheme } from '~/lib/supabase'
 import { cn } from '~/lib/cn'
+import type { FrameTheme } from '~/lib/supabase'
 
 export const FRAME_CONFIGS: Record<FrameTheme, FrameConfig> = {
   'warden-sculk': {
@@ -77,7 +77,7 @@ export function MinecraftHorrorFrame({
 
         {/* Conteúdo do card na área interna (fica ATRÁS do frame) */}
         <div
-          className="absolute z-10 flex flex-col justify-between p-10"
+          className="absolute z-10 flex flex-col justify-between p-12"
           style={{
             top: config.inset.top,
             bottom: config.inset.bottom,

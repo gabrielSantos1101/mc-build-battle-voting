@@ -1,12 +1,15 @@
 import { createFileRoute } from '@tanstack/react-router'
-import { useEffect, useState } from 'react'
 import { AnimatePresence, motion } from 'framer-motion'
-import { supabase, computeVoteStats } from '~/lib/supabase'
-import type { Round, Competitor, Vote, CompetitorWithVotes, FrameTheme } from '~/lib/supabase'
-import { PlayerHead, VoteBar } from '~/components/custom'
-import { TrophyBadge } from '~/components/custom'
+import { useEffect, useState } from 'react'
+import { PlayerHead, TrophyBadge, VoteBar } from '~/components/custom'
+import type { Competitor, CompetitorWithVotes, FrameTheme, Round, Vote } from '~/lib/supabase'
+import { computeVoteStats, supabase } from '~/lib/supabase'
+import { z } from 'zod'
 
 export const Route = createFileRoute()({
+  validateSearch: z.object({
+    color: z.string().optional(),
+  }).optional(),
   component: OverlayTop3,
 })
 
@@ -49,7 +52,6 @@ function Top3Widget({ entries, showResults }: { entries: RankedEntry[], showResu
         )}
       </div>
 
-      {/* Entries - Individual loading + layout transitions */}
       <AnimatePresence initial={false} mode="popLayout">
         {entries.map(({ competitor, rank }, index) => {
           const accent = FRAME_ACCENT[competitor.frame_theme as FrameTheme] ?? '#ff7800'
@@ -201,8 +203,12 @@ function OverlayTop3() {
     rank: (i + 1) as 1 | 2 | 3,
   }))
 
+  const { color } = Route.useSearch()
+
+  const bgColor = color ?? 'transparent'
+
   return (
-    <div style={{ background: 'transparent', padding: '8px', display: 'inline-block' }}>
+    <div style={{ background: bgColor, padding: '8px', display: 'inline-block' }}>
       <Top3Widget entries={ranked} showResults={round?.show_live_results ?? true} />
     </div>
   )
