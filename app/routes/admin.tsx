@@ -1,9 +1,9 @@
 import { createFileRoute } from '@tanstack/react-router'
 import { motion } from 'framer-motion'
-import { Clock, ExternalLink, Eye, EyeOff, Image as ImageIcon, Lock, LogOut, Pencil, Plus, RefreshCw, Trash2, X } from 'lucide-react'
+import { Clock, ExternalLink, Eye, EyeOff, Image as ImageIcon, Lock, LogOut, Pencil, Plus, RefreshCw, Trash2, UserRound, X } from 'lucide-react'
 import React, { useEffect, useRef, useState } from 'react'
 import { DateTimePicker } from '~/components/DateTimePicker'
-import { MinecraftButton, PlayerHead, StatusBadge } from '~/components/custom'
+import { ExportMenu, MinecraftButton, PlayerHead, StatusBadge } from '~/components/custom'
 import type { Competitor, FrameTheme, Round, Vote } from '~/lib/supabase/types'
 import { computeVoteStats, formatTimeMMSS, getRemainingSeconds, supabase } from '~/lib'
 
@@ -61,6 +61,7 @@ function AdminPage() {
   const [newRoundTitle, setNewRoundTitle] = useState('')
   const [startsAtDate, setStartsAtDate] = useState<Date | undefined>(undefined)
   const [playerNick, setPlayerNick] = useState('')
+  const [playerName, setPlayerName] = useState('')
   const [selectedTheme, setSelectedTheme] = useState<FrameTheme>('jack-pumpkin')
   const [imageFile, setImageFile] = useState<File | null>(null)
   const [imageUrlInput, setImageUrlInput] = useState('')
@@ -72,6 +73,7 @@ function AdminPage() {
   // Form states (Edit competitor)
   const [editingCompetitor, setEditingCompetitor] = useState<Competitor | null>(null)
   const [editNick, setEditNick] = useState('')
+  const [editName, setEditName] = useState('')
   const [editTheme, setEditTheme] = useState<FrameTheme>('jack-pumpkin')
   const [editImageFile, setEditImageFile] = useState<File | null>(null)
   const [editImageUrlInput, setEditImageUrlInput] = useState('')
@@ -453,6 +455,7 @@ function AdminPage() {
     const { error } = await supabase.from('competitors').insert({
       round_id: currentRound.id,
       player_nick: playerNick.trim(),
+      player_name: playerName.trim() || null,
       image_url: finalImageUrl,
       skin_url: skinUrl,
       frame_theme: selectedTheme,
@@ -462,6 +465,7 @@ function AdminPage() {
       setFormError('Erro ao cadastrar: ' + error.message)
     } else {
       setPlayerNick('')
+      setPlayerName('')
       setImageFile(null)
       setImageUrlInput('')
       setImagePreview(null)
@@ -484,6 +488,7 @@ function AdminPage() {
   function handleStartEdit(c: Competitor) {
     setEditingCompetitor(c)
     setEditNick(c.player_nick)
+    setEditName(c.player_name ?? '')
     setEditTheme(c.frame_theme as FrameTheme)
     setEditImageUrlInput(c.image_url)
     setEditImagePreview(c.image_url)
@@ -495,6 +500,7 @@ function AdminPage() {
   function handleCancelEdit() {
     setEditingCompetitor(null)
     setEditNick('')
+    setEditName('')
     setEditImageFile(null)
     setEditImageUrlInput('')
     setEditImagePreview(null)
@@ -563,6 +569,7 @@ function AdminPage() {
       .from('competitors')
       .update({
         player_nick: editNick.trim(),
+        player_name: editName.trim() || null,
         frame_theme: editTheme,
         image_url: finalImageUrl,
         skin_url: skinUrl,
@@ -661,6 +668,7 @@ function AdminPage() {
           >
             <ExternalLink size={12} /> Cena OBS Pódio
           </a>
+          <ExportMenu round={currentRound} competitors={competitors} votes={votes} />
           <button
             onClick={handleLogout}
             className="flex items-center gap-1 bg-[#2a1010] border border-[#ff444466] px-2.5 py-1.5 text-[#ff6666] hover:bg-[#3a1010] transition-colors"
@@ -840,20 +848,37 @@ function AdminPage() {
                     </div>
                   </div>
 
-                  {/* Skin Preview Box */}
-                  <div className="flex items-center gap-3 bg-[#14121d] p-2 border border-[#333]">
-                    {playerNick.trim() ? (
-                      <>
-                        <PlayerHead nick={playerNick.trim()} size={36} />
-                        <div>
-                          <div className="text-[9px] text-pumpkin-light">{playerNick.trim()}</div>
-                          <div className="text-[7px] text-warden-teal">Skin detectada ✓</div>
-                        </div>
-                      </>
-                    ) : (
-                      <div className="text-[7px] text-[#666]">Digite o nick para ver a skin</div>
-                    )}
+                  <div>
+                    <label className="text-[8px] text-[#aaa] block mb-1.5 flex items-center gap-1">
+                      <UserRound size={11} /> NOME REAL (opcional)
+                    </label>
+                    <input
+                      type="text"
+                      value={playerName}
+                      onChange={(e) => setPlayerName(e.target.value)}
+                      placeholder="Ex: Gabriel Silva"
+                      className="w-full text-[9px] p-2 bg-obsidian-light border border-[#444] text-white focus:outline-none focus:border-pumpkin"
+                    />
+                    <p className="text-[7px] text-[#555] mt-1">Só para identificar no painel e no relatório exportado.</p>
                   </div>
+                </div>
+
+                {/* Skin Preview Box */}
+                <div className="flex items-center gap-3 bg-[#14121d] p-2 border border-[#333]">
+                  {playerNick.trim() ? (
+                    <>
+                      <PlayerHead nick={playerNick.trim()} size={36} />
+                      <div>
+                        <div className="text-[9px] text-pumpkin-light">{playerNick.trim()}</div>
+                        <div className="text-[7px] text-warden-teal">Skin detectada ✓</div>
+                        {playerName.trim() && (
+                          <div className="text-[7px] text-[#888] mt-1">{playerName.trim()}</div>
+                        )}
+                      </div>
+                    </>
+                  ) : (
+                    <div className="text-[7px] text-[#666]">Digite o nick para ver a skin</div>
+                  )}
                 </div>
 
                 {/* Theme Selector with Preview */}
@@ -959,6 +984,9 @@ function AdminPage() {
                         <PlayerHead nick={c.player_nick} size={24} />
                         <div>
                           <div className="text-[9px] text-pumpkin-light">{c.player_nick}</div>
+                          {c.player_name && (
+                            <div className="text-[7px] text-[#888]">{c.player_name}</div>
+                          )}
                           <div className="text-[7px] text-[#666]">{c.frame_theme}</div>
                         </div>
                       </div>
@@ -1046,20 +1074,36 @@ function AdminPage() {
                     />
                   </div>
 
-                  {/* Skin Preview Box */}
-                  <div className="flex items-center gap-3 bg-[#14121d] p-2 border border-[#333]">
-                    {editNick.trim() ? (
-                      <>
-                        <PlayerHead nick={editNick.trim()} size={36} />
-                        <div>
-                          <div className="text-[9px] text-pumpkin-light">{editNick.trim()}</div>
-                          <div className="text-[7px] text-warden-teal">Skin atualizada ✓</div>
-                        </div>
-                      </>
-                    ) : (
-                      <div className="text-[7px] text-[#666]">Digite o nick</div>
-                    )}
+                  <div>
+                    <label className="text-[8px] text-[#aaa] block mb-1.5 flex items-center gap-1">
+                      <UserRound size={11} /> NOME REAL (opcional)
+                    </label>
+                    <input
+                      type="text"
+                      value={editName}
+                      onChange={(e) => setEditName(e.target.value)}
+                      placeholder="Ex: Gabriel Silva"
+                      className="w-full text-[9px] p-2 bg-obsidian-light border border-[#444] text-white focus:outline-none focus:border-pumpkin"
+                    />
                   </div>
+                </div>
+
+                {/* Skin Preview Box */}
+                <div className="flex items-center gap-3 bg-[#14121d] p-2 border border-[#333]">
+                  {editNick.trim() ? (
+                    <>
+                      <PlayerHead nick={editNick.trim()} size={36} />
+                      <div>
+                        <div className="text-[9px] text-pumpkin-light">{editNick.trim()}</div>
+                        <div className="text-[7px] text-warden-teal">Skin atualizada ✓</div>
+                        {editName.trim() && (
+                          <div className="text-[7px] text-[#888] mt-1">{editName.trim()}</div>
+                        )}
+                      </div>
+                    </>
+                  ) : (
+                    <div className="text-[7px] text-[#666]">Digite o nick</div>
+                  )}
                 </div>
 
                 {/* Theme Selector */}
