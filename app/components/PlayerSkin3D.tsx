@@ -12,18 +12,26 @@ export function PlayerSkin3D({
 }: PlayerSkin3DProps) {
   const containerRef = useRef<HTMLDivElement>(null)
   const [skinLoaded, setSkinLoaded] = useState(false)
+  const [skinFailed, setSkinFailed] = useState(false)
 
   useEffect(() => {
     if (!skinUrl) return
 
+    setSkinLoaded(false)
+    setSkinFailed(false)
+
     const img = new Image()
     img.crossOrigin = 'anonymous'
-    img.src = skinUrl
+    // skins salvas antes da correcao ficaram com http:// no banco, e o
+    // Mojang tambem devolve http://. Em https o navegador bloqueia isso.
+    img.src = skinUrl.replace(/^http:\/\//, 'https://')
     img.onload = () => {
       setSkinLoaded(true)
     }
-    img.onerror = () => { }
-    img.crossOrigin = 'anonymous'
+    img.onerror = () => {
+      console.error(`[PlayerSkin3D] falha ao carregar a skin: ${img.src}`)
+      setSkinFailed(true)
+    }
   }, [skinUrl])
 
   if (!skinLoaded || !skinUrl) {
@@ -37,12 +45,15 @@ export function PlayerSkin3D({
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'center',
-          color: '#444',
+          color: skinFailed ? '#a04040' : '#444',
           fontSize: '10px',
-          fontFamily: 'monospace'
+          fontFamily: 'monospace',
+          textAlign: 'center',
+          padding: '0 8px',
+          lineHeight: 1.6,
         }}
       >
-        Loading...
+        {skinFailed ? 'sem skin' : 'Loading...'}
       </div>
     )
   }
@@ -53,7 +64,7 @@ export function PlayerSkin3D({
       style={{ width: size, height: size }}
     >
       <ReactSkinview3d
-        skinUrl={skinUrl}
+        skinUrl={skinUrl.replace(/^http:\/\//, 'https://')}
         width={size}
         height={size}
         onReady={({ viewer }) => {

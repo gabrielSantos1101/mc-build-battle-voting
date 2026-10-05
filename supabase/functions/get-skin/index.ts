@@ -60,7 +60,9 @@ export default {
 
       const profile = await profileRes.json();
       const textures = JSON.parse(atob(profile.properties[0].value));
-      const skinUrl = textures.textures.SKIN.url;
+      // O Mojang devolve http://, que o navegador bloqueia como mixed
+      // content em pagina https (Vercel). textures.minecraft.net serve https.
+      const skinUrl = textures.textures.SKIN.url.replace(/^http:\/\//, 'https://');
 
       // Optional: Save to database if competitor_id provided
       // Note: Database operations would need Supabase client with service role
