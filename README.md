@@ -28,8 +28,11 @@ Sistema de votação para Build Battle de Minecraft com anti-fraude por IP/devic
   - Toggle "Placar ao vivo" / "Modo Suspense"
   - Zerar votos
 - **Gerenciamento de competidores**:
-  - Adicionar com nick (skin automática via mc-heads.net), tema, imagem (upload Supabase Storage ou URL)
+  - Adicionar com nick (skin automática via mc-heads.net), nome real opcional, tema, imagem (upload Supabase Storage ou URL)
   - Editar/remover competidores
+- **Exportar relatório** (botão `Exportar` no header, com dropdown):
+  - **PDF**: abre um relatório formatado numa aba nova (pódio top 3 com foto da build + avatar, ranking completo, mapa de geografia dos votos, registro voto a voto) e dispara a impressão — escolha "Salvar como PDF"
+  - **CSV**: planilha para Excel com 5 seções (resumo, ranking, origem por localidade, origem por país, votos detalhados)
 - **Links rápidos** para overlays OBS (Top 3, Cena Pódio)
 
 ### Overlays OBS
@@ -62,6 +65,11 @@ Execute `supabase/schema.sql` - cria:
 - Storage bucket `builds` (público)
 - Realtime habilitado nas 3 tabelas
 
+### 2.1 Migrations incrementais
+Para bancos já existentes, rode os arquivos de `supabase/migrations/` em ordem:
+- `20260101000000_add_competitor_player_name.sql` - adiciona `competitors.player_name` (text, nullable, só identificação/relatório)
+- `20260101010000_add_competitor_skin_url.sql` - adiciona `competitors.skin_url` (estava no `schema.sql` mas faltava em bancos já criados)
+
 ### 3. Usuário Admin
 No Dashboard Supabase: **Authentication → Users → Add user**
 - Email: `admin@email.com`
@@ -82,20 +90,24 @@ npm run build
 ## Estrutura do Projeto
 ```
 app/
-├── lib/supabase.ts          # Cliente Supabase + helpers (JWT, IP, voting logic)
+├── lib/
+│   ├── supabase/               # Cliente Supabase + tipos + helpers
+│   ├── export/                 # Relatório: modelo, CSV e HTML de impressão
+│   ├── auth/  ip/  vote/
 ├── routes/
-│   ├── index.tsx            # Página de votação pública
-│   ├── admin.tsx            # Painel admin
-│   ├── overlay/top3.tsx     # Overlay OBS Top 3
-│   └── overlay/cena.tsx     # Overlay OBS Cena Pódio
+│   ├── index.tsx               # Página de votação pública
+│   ├── admin.tsx               # Painel admin
+│   ├── overlay/top3.tsx        # Overlay OBS Top 3
+│   └── overlay/cena.tsx        # Overlay OBS Cena Pódio
 ├── components/
-│   ├── MinecraftHorrorFrame.tsx  # Molduras temáticas
-│   ├── ui.tsx                      # Componentes UI (Button, PlayerHead, VoteBar)
-│   ├── shadcn/                     # Componentes shadcn/ui adaptados
-│   └── DateTimePicker.tsx          # Seletor data/hora para admin
-└── styles.css             # Estilos globais + fontes Press Start 2P
+│   ├── custom/                 # MinecraftButton, PlayerHead, VoteBar, ExportMenu...
+│   ├── ui/                     # Componentes UI (Button, Popover, Calendar, Field)
+│   └── DateTimePicker.tsx      # Seletor data/hora para admin
+└── styles.css                  # Estilos globais + fontes Press Start 2P
 supabase/
-└── schema.sql             # Schema completo do banco
+├── schema.sql                  # Schema completo do banco
+├── migrations/                 # Migrations incrementais
+└── functions/get-skin/         # Edge function (Mojang API)
 ```
 
 ## Fluxo de Votação
