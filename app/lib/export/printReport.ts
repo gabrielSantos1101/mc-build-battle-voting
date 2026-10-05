@@ -109,16 +109,23 @@ function rankingRow(row: ReportCompetitorRow): string {
 
 function buildStyles(): string {
   return `
-    * { box-sizing: border-box; }
+    * {
+      box-sizing: border-box;
+      /* Chrome so imprime fundos de elemento se isso estiver ligado. */
+      -webkit-print-color-adjust: exact;
+      print-color-adjust: exact;
+    }
     html, body { margin: 0; padding: 0; }
+    /* O fundo precisa ficar no html: com ele so no body, o Chrome pinta
+       apenas a primeira pagina e o resto sai branco. */
+    html { background: #0e0d13; min-height: 100%; }
     body {
       background: #0e0d13;
+      min-height: 100%;
       color: #e0e0e0;
       font-family: 'Press Start 2P', 'Courier New', monospace;
       font-size: 9px;
       line-height: 1.7;
-      -webkit-print-color-adjust: exact;
-      print-color-adjust: exact;
     }
     .sheet { max-width: 1000px; margin: 0 auto; padding: 24px 20px 40px; }
     .toolbar { display: flex; align-items: center; gap: 12px; justify-content: center; padding: 16px; background: #16141f; border-bottom: 3px solid #ff780055; }
@@ -214,7 +221,12 @@ function buildStyles(): string {
 
     @media print {
       @page { size: A4 portrait; margin: 10mm; }
-      body { background: #0e0d13; }
+      /* !important porque o reset do * acima nao vence o fundo do navegador */
+      html, body {
+        background: #0e0d13 !important;
+        -webkit-print-color-adjust: exact !important;
+        print-color-adjust: exact !important;
+      }
       .toolbar { display: none !important; }
       .sheet { max-width: none; padding: 0; }
       .section, .podium-card, .stats, .geo-grid { page-break-inside: avoid; break-inside: avoid; }
