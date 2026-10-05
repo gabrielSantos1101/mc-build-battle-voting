@@ -3,7 +3,7 @@ import { AnimatePresence, motion } from 'framer-motion'
 import { useEffect, useState } from 'react'
 import { PlayerHead, TrophyBadge, VoteBar } from '~/components/custom'
 import type { Competitor, CompetitorWithVotes, FrameTheme, Round, Vote } from '~/lib/supabase/types'
-import { computeVoteStats, supabase } from '~/lib'
+import { computeVoteStats, loadRoundWithCompetitors, supabase } from '~/lib'
 
 export const Route = createFileRoute('/overlay/top3')({
   component: OverlayTop3,
@@ -156,22 +156,11 @@ function OverlayTop3() {
 
   useEffect(() => {
     async function init() {
-      const { data: roundData } = await supabase
-        .from('rounds')
-        .select('*')
-        .eq('status', 'active')
-        .order('created_at', { ascending: false })
-        .limit(1)
-        .single()
-
-      if (!roundData) return
-      setRound(roundData)
-
-      const { data: comps } = await supabase.from('competitors').select('*').eq('round_id', roundData.id)
-      setCompetitors(comps ?? [])
-
-      const { data: voteData } = await supabase.from('votes').select('*').eq('round_id', roundData.id)
-      setVotes(voteData ?? [])
+      const data = await loadRoundWithCompetitors()
+      if (!data) return
+      setRound(data.round)
+      setCompetitors(data.competitors)
+      setVotes(data.votes)
     }
     init()
   }, [])

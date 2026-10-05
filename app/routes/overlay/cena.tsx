@@ -4,7 +4,7 @@ import { useEffect, useState } from 'react'
 import { PlayerHead } from '~/components/custom'
 import { PlayerSkin3D } from '~/components/PlayerSkin3D'
 import type { Competitor, CompetitorWithVotes, FrameTheme, Round, Vote } from '~/lib/supabase/types'
-import { computeVoteStats, supabase } from '~/lib'
+import { computeVoteStats, loadRoundWithCompetitors, supabase } from '~/lib'
 
 export const Route = createFileRoute('/overlay/cena')({
   component: OverlayCena,
@@ -188,22 +188,11 @@ function OverlayCena() {
 
   useEffect(() => {
     async function init() {
-      const { data: roundData } = await supabase
-        .from('rounds')
-        .select('*')
-        .in('status', ['active', 'finished'])
-        .order('created_at', { ascending: false })
-        .limit(1)
-        .single()
-
-      if (!roundData) return
-      setRound(roundData)
-
-      const { data: comps } = await supabase.from('competitors').select('*').eq('round_id', roundData.id)
-      setCompetitors(comps ?? [])
-
-      const { data: voteData } = await supabase.from('votes').select('*').eq('round_id', roundData.id)
-      setVotes(voteData ?? [])
+      const data = await loadRoundWithCompetitors()
+      if (!data) return
+      setRound(data.round)
+      setCompetitors(data.competitors)
+      setVotes(data.votes)
     }
 
     init()
