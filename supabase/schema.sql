@@ -24,6 +24,7 @@ create table if not exists public.competitors (
   id uuid primary key default gen_random_uuid(),
   round_id uuid not null references public.rounds(id) on delete cascade,
   player_nick text not null,
+  player_name text, -- Nome real do jogador (opcional, só identificação/relatório)
   image_url text not null,
   skin_url text, -- URL da skin do Minecraft (PNG do Mojang)
   -- Temas: 'jack-pumpkin' | 'warden-sculk' | 'pale-garden' | 'wither' | 'ender-dragon'
@@ -31,8 +32,9 @@ create table if not exists public.competitors (
   created_at timestamptz not null default now()
 );
 
--- Garantir coluna skin_url caso a tabela já exista
+-- Garantir colunas de skin_url e player_name caso a tabela já exista
 alter table public.competitors add column if not exists skin_url text;
+alter table public.competitors add column if not exists player_name text;
 
 -- 3. Tabela de Votos (1 voto por device_id por rodada garantido pelo banco + IP tracking)
 create table if not exists public.votes (
