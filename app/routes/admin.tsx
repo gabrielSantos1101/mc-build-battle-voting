@@ -856,7 +856,7 @@ function AdminPage() {
                       type="text"
                       value={playerName}
                       onChange={(e) => setPlayerName(e.target.value)}
-                      placeholder="Ex: Gabriel Silva"
+                      placeholder="Ex: Gabriel Santos"
                       className="w-full text-[9px] p-2 bg-obsidian-light border border-[#444] text-white focus:outline-none focus:border-pumpkin"
                     />
                     <p className="text-[7px] text-[#555] mt-1">Só para identificar no painel e no relatório exportado.</p>
@@ -1082,7 +1082,7 @@ function AdminPage() {
                       type="text"
                       value={editName}
                       onChange={(e) => setEditName(e.target.value)}
-                      placeholder="Ex: Gabriel Silva"
+                      placeholder="Ex: Gabriel Santos"
                       className="w-full text-[9px] p-2 bg-obsidian-light border border-[#444] text-white focus:outline-none focus:border-pumpkin"
                     />
                   </div>
