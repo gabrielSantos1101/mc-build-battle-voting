@@ -28,7 +28,7 @@ Sistema de votação para Build Battle de Minecraft com anti-fraude por IP/devic
   - Toggle "Placar ao vivo" / "Modo Suspense"
   - Zerar votos
 - **Gerenciamento de competidores**:
-  - Adicionar com nick (skin automática via mc-heads.net), nome real opcional, tema, imagem (upload Supabase Storage ou URL)
+  - Adicionar com nick (skin automática via minotar.net), nome real opcional, tema, imagem (upload Supabase Storage ou URL)
   - Editar/remover competidores
 - **Exportar relatório** (botão `Exportar` no header, com dropdown):
   - **PDF**: abre um relatório formatado numa aba nova (pódio top 3 com foto da build + avatar, ranking completo, mapa de geografia dos votos, registro voto a voto) e dispara a impressão — escolha "Salvar como PDF"

@@ -1,8 +1,8 @@
 import type { Competitor, CompetitorWithVotes, Vote, VotingTimeStatus } from './types'
 
 export function getMinecraftAvatarUrl(nick: string, size = 48): string {
-  if (!nick) return 'https://mc-heads.net/avatar/MHF_Steve/48'
-  return `https://mc-heads.net/avatar/${encodeURIComponent(nick)}/${size}`
+  if (!nick) return 'https://minotar.net/helm/MHF_Steve/48'
+  return `https://minotar.net/helm/${encodeURIComponent(nick)}/${size}`
 }
 
 export function computeVoteStats(
