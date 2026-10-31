@@ -57,6 +57,11 @@ function AdminPage() {
   const [votes, setVotes] = useState<Vote[]>([])
   const [loading, setLoading] = useState(false)
 
+  // Form states (Edit round)
+  const [editingRound, setEditingRound] = useState<Round | null>(null)
+  const [editRoundTitle, setEditRoundTitle] = useState('')
+  const [editRoundError, setEditRoundError] = useState<string | null>(null)
+
   // Form states (Add competitor)
   const [newRoundTitle, setNewRoundTitle] = useState('')
   const [startsAtDate, setStartsAtDate] = useState<Date | undefined>(undefined)
@@ -276,6 +281,70 @@ function AdminPage() {
       setStartsAtDate(undefined)
       await loadRounds()
       selectRound(data)
+    }
+  }
+
+  function handleStartEditRound(round: Round) {
+    setEditingRound(round)
+    setEditRoundTitle(round.title)
+    setEditRoundError(null)
+  }
+
+  function handleCancelEditRound() {
+    setEditingRound(null)
+    setEditRoundTitle('')
+    setEditRoundError(null)
+  }
+
+  async function handleSaveRoundEdit(e: React.FormEvent) {
+    e.preventDefault()
+    if (!editingRound) return
+    const title = editRoundTitle.trim()
+    if (!title) {
+      setEditRoundError('O título não pode ficar vazio!')
+      return
+    }
+
+    const { error } = await supabase
+      .from('rounds')
+      .update({ title })
+      .eq('id', editingRound.id)
+
+    if (error) {
+      setEditRoundError('Erro ao salvar: ' + error.message)
+      return
+    }
+
+    const updated = { ...editingRound, title }
+    setRounds((prev) => prev.map((r) => (r.id === updated.id ? updated : r)))
+    if (currentRound?.id === updated.id) setCurrentRound(updated)
+    handleCancelEditRound()
+  }
+
+  async function handleDeleteRound(round: Round) {
+    if (!confirm(`Excluir a rodada "${round.title}"?\n\nTodos os competidores e votos dela serão apagados.`)) {
+      return
+    }
+
+    const { error } = await supabase.from('rounds').delete().eq('id', round.id)
+
+    if (error) {
+      alert('Erro ao excluir rodada: ' + error.message)
+      return
+    }
+
+    const remaining = rounds.filter((r) => r.id !== round.id)
+    setRounds(remaining)
+
+    if (currentRound?.id === round.id) {
+      if (remaining.length > 0) {
+        await selectRound(remaining[0])
+      } else {
+        setCurrentRound(null)
+        setCompetitors([])
+        setVotes([])
+        setStartsAtDate(undefined)
+      }
     }
   }
 
@@ -711,17 +780,38 @@ function AdminPage() {
             <h2 className="text-xs text-[#aaa] mb-3">RODADAS</h2>
             <div className="space-y-2 max-h-56 overflow-y-auto pr-1">
               {rounds.map((r) => (
-                <button
+                <div
                   key={r.id}
-                  onClick={() => selectRound(r)}
-                  className={`w-full text-left p-2.5 border text-[8px] flex items-center justify-between transition-colors ${currentRound?.id === r.id
-                    ? 'bg-[#2a1705] border-pumpkin text-pumpkin-light'
-                    : 'bg-[#14121d] border-[#222] text-[#888] hover:bg-obsidian-light'
+                  className={`flex items-center gap-1 border text-[8px] transition-colors ${currentRound?.id === r.id
+                    ? 'bg-[#2a1705] border-pumpkin'
+                    : 'bg-[#14121d] border-[#222]'
                     }`}
                 >
-                  <span className="truncate pr-2">{r.title}</span>
-                  <StatusBadge status={r.status} />
-                </button>
+                  <button
+                    onClick={() => selectRound(r)}
+                    className={`flex-1 min-w-0 text-left p-2.5 flex items-center justify-between transition-colors ${currentRound?.id === r.id
+                      ? 'text-pumpkin-light'
+                      : 'text-[#888] hover:bg-obsidian-light'
+                      }`}
+                  >
+                    <span className="truncate pr-2">{r.title}</span>
+                    <StatusBadge status={r.status} />
+                  </button>
+                  <button
+                    onClick={() => handleStartEditRound(r)}
+                    className="p-1.5 text-pumpkin-light hover:text-[#ffcc00] bg-obsidian-light border border-[#ff780044] hover:border-[#ff7800] transition-colors"
+                    title="Editar rodada"
+                  >
+                    <Pencil size={11} />
+                  </button>
+                  <button
+                    onClick={() => handleDeleteRound(r)}
+                    className="p-1.5 mr-1 text-[#f55] hover:text-[#f22] bg-obsidian-light border border-[#f554] hover:border-[#f55] transition-colors"
+                    title="Excluir rodada"
+                  >
+                    <Trash2 size={11} />
+                  </button>
+                </div>
               ))}
               {rounds.length === 0 && (
                 <p className="text-[8px] text-[#555] text-center py-4">Nenhuma rodada criada.</p>
@@ -1035,6 +1125,64 @@ function AdminPage() {
           }
         </div >
       </div >
+
+      {/* Modal de Edição de Rodada */}
+      {
+        editingRound && (
+          <div
+            className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/85 backdrop-blur-sm"
+            onClick={handleCancelEditRound}
+          >
+            <div
+              className="relative max-w-md w-full bg-obsidian border-4 border-pumpkin p-5 shadow-[0_0_50px_rgba(255,120,0,0.5)]"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <div className="flex items-center justify-between pb-3 mb-4 border-b-2 border-[#ff780044]">
+                <h2 className="text-xs text-pumpkin-light flex items-center gap-2">
+                  <Pencil size={14} /> EDITAR RODADA
+                </h2>
+                <button
+                  onClick={handleCancelEditRound}
+                  className="text-[#888] hover:text-white p-1"
+                >
+                  <X size={18} />
+                </button>
+              </div>
+
+              <form onSubmit={handleSaveRoundEdit} className="space-y-4">
+                <div>
+                  <label className="text-[8px] text-[#aaa] block mb-1.5">TÍTULO DA RODADA:</label>
+                  <input
+                    type="text"
+                    value={editRoundTitle}
+                    onChange={(e) => setEditRoundTitle(e.target.value)}
+                    placeholder="Ex: Mansão Assombrada"
+                    autoFocus
+                    className="w-full text-[9px] p-2.5 bg-obsidian-light border border-[#444] text-white focus:outline-none focus:border-pumpkin"
+                  />
+                </div>
+
+                {editRoundError && (
+                  <p className="text-[8px] text-[#ff4444] bg-[#200] p-2 border border-[#600]">{editRoundError}</p>
+                )}
+
+                <div className="flex gap-2 pt-2 border-t border-[#333]">
+                  <MinecraftButton variant="pumpkin" type="submit" className="flex-1">
+                    ✓ Salvar Alterações
+                  </MinecraftButton>
+                  <button
+                    type="button"
+                    onClick={handleCancelEditRound}
+                    className="px-4 py-2 bg-[#200] border-2 border-[#600] text-[#ff8888] text-[8px] hover:bg-[#300] transition-colors"
+                  >
+                    Cancelar
+                  </button>
+                </div>
+              </form>
+            </div>
+          </div>
+        )
+      }
 
       {/* Modal de Edição de Competidor */}
       {
