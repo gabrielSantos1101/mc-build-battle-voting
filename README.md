@@ -123,4 +123,4 @@ supabase/
 - **Supabase**: Já configurado via Dashboard
 
 ## Licença
-MIT
+MIT 
