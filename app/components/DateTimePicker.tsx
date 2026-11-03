@@ -1,12 +1,7 @@
-import { addMinutes, format } from 'date-fns'
-import { ptBR } from 'date-fns/locale'
-import { ChevronDownIcon } from 'lucide-react'
+import { addMinutes, format, parse } from 'date-fns'
 import * as React from 'react'
 
-import { Button } from '~/components/ui'
-import { Calendar } from '~/components/ui'
 import { Field, FieldGroup, FieldLabel } from '~/components/ui'
-import { Popover, PopoverContent, PopoverTrigger } from '~/components/ui'
 import { cn } from '~/lib/cn'
 
 interface DateTimePickerProps {
@@ -17,18 +12,24 @@ interface DateTimePickerProps {
   disabled?: boolean
 }
 
+function toInputDate(date: Date | undefined) {
+  return date ? format(date, 'yyyy-MM-dd') : ''
+}
+
 export function DateTimePicker({ value, onChange, label, minDate, disabled = false }: DateTimePickerProps) {
-  const [open, setOpen] = React.useState(false)
-
   const timeValue = value ? format(value, 'HH:mm') : '23:59'
+  const minDateValue = minDate ? format(minDate, 'yyyy-MM-dd') : undefined
 
-  function handleDaySelect(day: Date | undefined) {
-    if (!day) { onChange(undefined); setOpen(false); return }
+  function handleDateChange(e: React.ChangeEvent<HTMLInputElement>) {
+    const raw = e.target.value
+    if (!raw) {
+      onChange(undefined)
+      return
+    }
     const [h, m] = timeValue.split(':').map(Number)
-    const merged = new Date(day)
+    const merged = parse(raw, 'yyyy-MM-dd', new Date())
     merged.setHours(h, m, 0, 0)
     onChange(merged)
-    setOpen(false)
   }
 
   function handleTimeChange(e: React.ChangeEvent<HTMLInputElement>) {
@@ -51,44 +52,28 @@ export function DateTimePicker({ value, onChange, label, minDate, disabled = fal
       )}
 
       <FieldGroup className="flex-row items-end gap-2">
-        {/* Campo de Data */}
+        {/* Campo de Data (calendário nativo) */}
         <Field className="flex-1">
           <FieldLabel htmlFor="date-field" className="font-['Press_Start_2P']">
             DATA
           </FieldLabel>
-          <Popover open={open} onOpenChange={setOpen}>
-            <PopoverTrigger asChild>
-              <Button
-                id="date-field"
-                variant="outline"
-                disabled={disabled}
-                className={cn(
-                  'w-full justify-between font-normal text-[8px] font-["Press_Start_2P"]',
-                  'bg-obsidian-light border-[#555] text-left hover:bg-obsidian-light hover:border-pumpkin',
-                  'h-auto py-2.5 px-2.5',
-                  !value && 'text-[#555]',
-                  value && 'text-[#ffcc66]',
-                  disabled && 'opacity-50 cursor-not-allowed'
-                )}
-              >
-                {value ? format(value, 'dd/MM/yyyy', { locale: ptBR }) : 'Selecionar...'}
-                <ChevronDownIcon className="h-3 w-3 text-pumpkin-light shrink-0" />
-              </Button>
-            </PopoverTrigger>
-            <PopoverContent
-              className="w-auto p-0 border-2 border-pumpkin bg-obsidian shadow-[0_8px_32px_rgba(0,0,0,0.95)]"
-              align="start"
-            >
-              <Calendar
-                mode="single"
-                selected={value}
-                defaultMonth={value}
-                onSelect={handleDaySelect}
-                locale={ptBR}
-                disabled={minDate ? { before: minDate } : undefined}
-              />
-            </PopoverContent>
-          </Popover>
+          <input
+            id="date-field"
+            type="date"
+            value={toInputDate(value)}
+            min={minDateValue}
+            onChange={handleDateChange}
+            disabled={disabled}
+            className={cn(
+              'w-full text-[8px] py-2.5 px-2.5 font-["Press_Start_2P"]',
+              'bg-obsidian-light border border-[#555] text-[#ffcc66]',
+              'focus:outline-none focus:border-pumpkin',
+              '[color-scheme:dark]',
+              '[&::-webkit-calendar-picker-indicator]:cursor-pointer',
+              !value && 'text-[#555]',
+              disabled && 'opacity-50 cursor-not-allowed'
+            )}
+          />
         </Field>
 
         {/* Campo de Hora (input nativo type="time") */}
@@ -106,9 +91,8 @@ export function DateTimePicker({ value, onChange, label, minDate, disabled = fal
               'w-full text-[9px] py-2.5 px-2 font-["Press_Start_2P"]',
               'bg-obsidian-light border border-[#555] text-[#ffcc00]',
               'focus:outline-none focus:border-pumpkin',
-              'appearance-none',
-              '[&::-webkit-calendar-picker-indicator]:hidden',
-              '[&::-webkit-calendar-picker-indicator]:appearance-none',
+              '[color-scheme:dark]',
+              '[&::-webkit-calendar-picker-indicator]:cursor-pointer',
               disabled && 'opacity-50 cursor-not-allowed'
             )}
           />
@@ -151,7 +135,7 @@ export function DateTimePicker({ value, onChange, label, minDate, disabled = fal
       {/* Preview do valor final */}
       {value && (
         <div className="mt-2 text-[7px] text-[#00ff88] font-['Press_Start_2P'] flex items-center gap-1.5">
-          ✓ Encerramento: {format(value, "dd/MM/yyyy 'às' HH:mm", { locale: ptBR })}
+          ✓ Encerramento: {format(value, "dd/MM/yyyy 'às' HH:mm")}
         </div>
       )}
     </div>
